@@ -4,6 +4,21 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/chat_app/app/src/main/res/layout/activity_main.xml" value="0.340625" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_chat_input.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_content_bottom.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_content_top.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_icon.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_recived_message.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/background_sent_message.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/drawable/ic_outline_info_24.xml" value="0.183" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_chat.xml" value="0.33" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_login.xml" value="0.2962962962962963" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_main.xml" value="0.33" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_register.xml" value="0.2962962962962963" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_user.xml" value="0.3546875" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_recived_message.xml" value="0.3546875" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_user.xml" value="0.3536458333333333" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/item_conteiner_sent_message.xml" value="0.3536458333333333" />
       </map>
     </option>
   </component>

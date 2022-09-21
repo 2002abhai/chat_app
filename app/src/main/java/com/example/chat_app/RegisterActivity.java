@@ -67,9 +67,9 @@ public class RegisterActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     loading(false);
                     preferencemanager.putBoolean(Constants.KEY_IS_SIGN_IN,true);
-                    preferencemanager.getString(Constants.KEY_USER_ID, documentReference.getId());
-                    preferencemanager.getString(Constants.KEY_NAME,binding.inputName.getText().toString());
-                    preferencemanager.getString(Constants.KEY_image,encodeImage);
+                    preferencemanager.putString(Constants.KEY_USER_ID, documentReference.getId());
+                    preferencemanager.putString(Constants.KEY_NAME,binding.inputName.getText().toString());
+                    preferencemanager.putString(Constants.KEY_image,encodeImage);
                     Intent intent = new Intent(getApplicationContext(),MainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
@@ -108,7 +108,7 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 }
             }
-    );
+            );
 
     private Boolean isValidSignUpDetail() {
         if (encodeImage == null) {
@@ -120,7 +120,7 @@ public class RegisterActivity extends AppCompatActivity {
         } else if (binding.inputEmail.getText().toString().trim().isEmpty()) {
             showToast("Enter Email");
             return false;
-        } else if (!Patterns.EMAIL_ADDRESS.matcher(binding.inputName.getText().toString()).matches()) {
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(binding.inputEmail.getText().toString()).matches()) {
             showToast("Enter Valid Email");
             return false;
         } else if (binding.inputPassword.getText().toString().trim().isEmpty()) {

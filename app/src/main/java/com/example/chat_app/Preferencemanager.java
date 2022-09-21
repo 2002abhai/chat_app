@@ -17,19 +17,21 @@ public class Preferencemanager {
         editor.putBoolean(key,value);
         editor.apply();
     }
+
     public Boolean getBoolean(String key){
        return preferences.getBoolean(key,false);
     }
+
     public void putString(String key, String value){
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString(key,value);
         editor.apply();
     }
-    public String getString(String keyName, String key){
-        return preferences.getString(key,null);
+    public String getString(String value){
+        return preferences.getString(value,null);
     }
 
-    private  void clear(){
+    void clear(){
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
         editor.apply();
