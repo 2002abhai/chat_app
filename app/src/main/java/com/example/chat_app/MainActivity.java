@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setListeners(){
-        binding.imageProfile.setOnClickListener(v -> signOut());
+        binding.imageSignOut.setOnClickListener(v -> signOut());
         binding.febNewChat.setOnClickListener(v ->
                 startActivity(new Intent(getApplicationContext(),UserActivity.class)));
     }

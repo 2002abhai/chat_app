@@ -25,6 +25,7 @@ public class UserActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         preferencemanager = new Preferencemanager(getApplicationContext());
         setListeners();
+        getUser();
     }
 
     private void setListeners(){
