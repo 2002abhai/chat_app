@@ -1,19 +1,17 @@
 package com.example.chat_app;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
 import com.example.chat_app.databinding.ActivityUserBinding;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserActivity extends AppCompatActivity {
+public class UserActivity extends BaseActivity  implements UserListener{
 
     private ActivityUserBinding binding;
     private Preferencemanager preferencemanager;
@@ -50,10 +48,11 @@ public class UserActivity extends AppCompatActivity {
                             user.email = queryDocumentSnapshot.getString(Constants.KEY_EMAIL);
                             user.image = queryDocumentSnapshot.getString(Constants.KEY_image);
                             user.token = queryDocumentSnapshot.getString(Constants.KEY_FCM_TOKEN);
+                            user.image = queryDocumentSnapshot.getId();
                             users.add(user);
                         }
                         if (users.size() > 0) {
-                            UserAdapter userAdapter = new UserAdapter(users);
+                            UserAdapter userAdapter = new UserAdapter(users,this);
                             binding.userRecycleView.setAdapter(userAdapter);
                             binding.userRecycleView.setVisibility(View.VISIBLE);
                         } else {
@@ -78,5 +77,13 @@ public class UserActivity extends AppCompatActivity {
         } else {
             binding.progressBar.setVisibility(View.INVISIBLE);
         }
+    }
+
+    @Override
+    public void onUserClicked(UserModel user) {
+        Intent intent = new Intent(getApplicationContext(),ChatActivity.class);
+        intent.putExtra(Constants.KEY_USER,user);
+        startActivity(intent);
+        finish();
     }
 }

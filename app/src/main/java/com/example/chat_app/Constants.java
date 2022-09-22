@@ -1,5 +1,7 @@
 package com.example.chat_app;
 
+import java.util.HashMap;
+
 public class Constants {
 
     public static final String KEY_COLLECTION_USER ="users";
@@ -11,5 +13,38 @@ public class Constants {
     public static final String KEY_USER_ID ="userId";
     public static final String KEY_image ="image";
     public static final String KEY_FCM_TOKEN ="fcmToken";
+    public static final String KEY_USER ="user";
+    public static final String KEY_COLLECTION_CHAT ="chat";
+    public static final String KEY_SENDER_ID ="senderId";
+    public static final String KEY_RECEIVER_ID ="receiverId";
+    public static final String KEY_MESSAGE ="message";
+    public static final String KEY_TIMESTAMP="timestamp";
+    public static final String KEY_COLLECTION_CONVERSATION="conversation";
+    public static final String KEY_SENDER_NAME="senderName";
+    public static final String KEY_RECEIVER_NAME="receiverName";
+    public static final String KEY_RECEIVER_IMAGE="receiverImage";
+    public static final String KEY_SENDER_IMAGE="senderImage";
+    public static final String KEY_LAST_MESSAGE="lastMessage";
+    public static final String KEY_AVAILABILITY="availability";
+    public static final String REMOTE_MESSAGE_AUTHORIZATION="Authorization";
+    public static final String REMOTE_MESSAGE_CONTENT_TYPE="Content-Type";
+    public static final String REMOTE_MSG_DATA="data";
+    public static final String REMOTE_MSG_REGISTRATION_IDS="registration-ids";
+
+    public static HashMap<String,String> remoteMsgHeaders = null;
+    public static HashMap<String,String> getRemoteMsgHeaders(){
+        if(remoteMsgHeaders == null){
+            remoteMsgHeaders = new HashMap<>();
+            remoteMsgHeaders.put(
+                    REMOTE_MESSAGE_AUTHORIZATION,
+                    "key=AAAA5Hnm8Zw:APA91bEvTay-_wtVX3arp5i1ZsR7FKNtWogKh9AZ300raTbkOVZfdqRoa30-SY9udaNCfeLbtKiOqwY64YxvgOxsGpbfnMk2LSDCyPWSiF6n5ViKdnMNkdlNsz1YtQW7ee6ZRvonz-3x"
+            );
+            remoteMsgHeaders.put(
+                    REMOTE_MESSAGE_CONTENT_TYPE,
+                    "application/json"
+            );
+        }
+        return remoteMsgHeaders;
+    }
 
 }
