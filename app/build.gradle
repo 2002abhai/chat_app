@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.example.chat_app"
         minSdk 21
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -55,9 +55,10 @@ dependencies {
 
     ///Multidex
     implementation 'com.android.support:multidex:1.0.3'
+    implementation "androidx.core:core-ktx:1.9.0"
 
     ///Retrofit
-    implementation 'com.squareup.retrofit2:retrofit2:2.9.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-scalars:2.9.0'
 
 }

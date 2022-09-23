@@ -4,6 +4,12 @@
     package="com.example.chat_app">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.telephony" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.WRITE_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
 
     <application
         android:allowBackup="true"
@@ -42,11 +48,22 @@
 
         <service
             android:name=".MessangingService"
+            android:enabled="true"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".NotifationReciver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
     </application>
 
 </manifest>

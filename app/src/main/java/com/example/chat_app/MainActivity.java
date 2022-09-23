@@ -3,10 +3,15 @@ package com.example.chat_app;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.View;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.example.chat_app.databinding.ActivityMainBinding;
 import com.google.firebase.firestore.DocumentChange;
@@ -17,6 +22,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +37,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
     private List<ChatMessage> conversations;
     private RecentConversationsAdapter recentConversationsAdapter;
     private FirebaseFirestore database;
+    private String encodeImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +63,12 @@ public class MainActivity extends BaseActivity implements ConversionListener{
         binding.imageSignOut.setOnClickListener(v -> signOut());
         binding.febNewChat.setOnClickListener(v ->
                 startActivity(new Intent(getApplicationContext(),UserActivity.class)));
+
+        binding.imageProfile.setOnClickListener(view -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            pickImage.launch(intent);
+        });
     }
 
     private void loadUserDetail() {
@@ -120,6 +135,35 @@ public class MainActivity extends BaseActivity implements ConversionListener{
             binding.progressBar.setVisibility(View.GONE);
         }
     };
+
+    private String encodeImage(Bitmap bitmap) {
+        int previewWidth = 150;
+        int previewHeight = bitmap.getHeight() * previewWidth / bitmap.getWidth();
+        Bitmap previewBitmap = Bitmap.createScaledBitmap(bitmap, previewWidth, previewHeight, false);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        previewBitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteArrayOutputStream);
+        byte[] bytes = byteArrayOutputStream.toByteArray();
+        return Base64.encodeToString(bytes, Base64.DEFAULT);
+    }
+
+    private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        Uri imageUri = result.getData().getData();
+                        try {
+                            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                            binding.imageProfile.setImageBitmap(bitmap);
+                            encodeImage = encodeImage(bitmap);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+    );
 
     private void getToken() {
         FirebaseMessaging.getInstance().getToken().addOnSuccessListener(this::updateToken);

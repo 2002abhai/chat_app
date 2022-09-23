@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -29,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import retrofit2.Call;
@@ -61,7 +63,8 @@ public class ChatActivity extends BaseActivity {
         preferencemanager = new Preferencemanager(getApplicationContext());
         chatMessages = new ArrayList<>();
         chatAdapter = new ChatAdapter(
-                chatMessages, getBitmapFromEncodedString(receiverUser.image),
+                chatMessages,
+                getBitmapFromEncodedString(receiverUser.image),
                 preferencemanager.getString(Constants.KEY_USER_ID)
         );
         binding.chatRecycleView.setAdapter(chatAdapter);
@@ -91,18 +94,13 @@ public class ChatActivity extends BaseActivity {
         }
         if(!isReceiverAvailable){
             try {
-                JSONArray tokens = new JSONArray();
-                tokens.put(receiverUser.token);
-
                 JSONObject data = new JSONObject();
-                data.put(Constants.KEY_USER_ID,preferencemanager.getString(Constants.KEY_USER_ID));
-                data.put(Constants.KEY_NAME,preferencemanager.getString(Constants.KEY_NAME));
-                data.put(Constants.KEY_FCM_TOKEN,preferencemanager.getString(Constants.KEY_FCM_TOKEN));
-                data.put(Constants.KEY_MESSAGE,binding.inputMessage.getText().toString());
+                data.put("title", preferencemanager.getString(Constants.KEY_NAME));
+                data.put("body", binding.inputMessage.getText().toString());
 
                 JSONObject body = new JSONObject();
-                body.put(Constants.REMOTE_MSG_DATA,data);
-                body.put(Constants.REMOTE_MSG_REGISTRATION_IDS,tokens);
+                body.put("notification",data);
+                body.put("to", receiverUser.token);
 
                 sendNotification(body.toString());
 
@@ -119,10 +117,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     private void sendNotification(String messageBody){
-        ApiClient.getClient().create(ApiService.class).sendMessage(
-            Constants.getRemoteMsgHeaders(),
-                messageBody
-        ).enqueue(new Callback<String>() {
+        ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody).enqueue(new Callback<String>() {
             @Override
             public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
                 if(response.isSuccessful()){
@@ -130,7 +125,7 @@ public class ChatActivity extends BaseActivity {
                         if(response.body() != null){
                             JSONObject responseJson = new JSONObject(response.body());
                             JSONArray result = responseJson.getJSONArray("results");
-                            if(responseJson.getInt("failure") ==1){
+                            if(responseJson.getInt("failure") == 1){
                                 JSONObject error = (JSONObject) result.get(0);
                                 showToast(error.getString("error"));
                                 return;
@@ -242,7 +237,16 @@ public class ChatActivity extends BaseActivity {
 
     private void setListeners() {
         binding.imageBack.setOnClickListener(v -> onBackPressed());
-        binding.layoutSend.setOnClickListener(v -> sendMessage());
+        binding.layoutSend.setOnClickListener(v ->{
+            String data = binding.inputMessage.getText().toString();
+            Log.e("data print", binding.inputMessage.getText().toString());
+            Log.e("data print", data);
+            if(binding.inputMessage.getText().toString().isEmpty() || binding.inputMessage.getText() == null){
+                showToast("Please Enter Any Message");
+            }else {
+                sendMessage();;
+            }
+        });
     }
 
     private String getReadableDateTime(Date date) {
