@@ -10,7 +10,7 @@
     android:layout_gravity="center"
     android:overScrollMode="never"
     android:padding="@dimen/_24sdp"
-    tools:context=".LoginActivity">
+    tools:context=".activities.LoginActivity">
 
     <LinearLayout
         android:layout_width="match_parent"

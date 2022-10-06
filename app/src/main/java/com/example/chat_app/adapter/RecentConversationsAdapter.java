@@ -1,15 +1,17 @@
-package com.example.chat_app;
+package com.example.chat_app.adapter;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.example.chat_app.model.UserModel;
 import com.example.chat_app.databinding.ItemContainerRecentConversionBinding;
+import com.example.chat_app.model.ChatMessage;
+import com.example.chat_app.listner.ConversionListener;
 
 
 import java.util.List;
@@ -18,10 +20,12 @@ public class RecentConversationsAdapter extends RecyclerView.Adapter<RecentConve
 
     private final List<ChatMessage> chatMessages;
     private final ConversionListener conversionListener;
+    private final Context context;
 
-    public RecentConversationsAdapter(List<ChatMessage> chatMessages, ConversionListener conversionListener) {
+    public RecentConversationsAdapter(List<ChatMessage> chatMessages, ConversionListener conversionListener,Context context) {
         this.chatMessages = chatMessages;
         this.conversionListener = conversionListener;
+        this.context = context;
     }
 
     @NonNull
@@ -58,7 +62,8 @@ public class RecentConversationsAdapter extends RecyclerView.Adapter<RecentConve
         }
 
         void setData(ChatMessage chatMessage) {
-            binding.imageProfile.setImageBitmap(getConversationImage(chatMessage.conversionImage));
+            Glide.with(context).load(chatMessage.conversionImage).into(binding.imageProfile);
+//            binding.imageProfile.setImageBitmap(getConversationImage(chatMessage.conversionImage));
             binding.textName.setText(chatMessage.conversionName);
             binding.textRecentMessage.setText(chatMessage.message);
             binding.getRoot().setOnClickListener(v -> {
@@ -71,8 +76,8 @@ public class RecentConversationsAdapter extends RecyclerView.Adapter<RecentConve
         }
     }
 
-    private Bitmap getConversationImage(String encodedImage) {
+  /*  private Bitmap getConversationImage(String encodedImage) {
         byte[] bytes = Base64.decode(encodedImage, Base64.DEFAULT);
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-    }
+    }*/
 }

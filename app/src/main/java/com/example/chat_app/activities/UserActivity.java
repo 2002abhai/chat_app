@@ -1,17 +1,24 @@
-package com.example.chat_app;
+package com.example.chat_app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
+import com.example.chat_app.uitilies.Constants;
+import com.example.chat_app.uitilies.Preferencemanager;
+import com.example.chat_app.adapter.UserAdapter;
+import com.example.chat_app.listner.UserListener;
+import com.example.chat_app.model.UserModel;
 import com.example.chat_app.databinding.ActivityUserBinding;
+import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserActivity extends BaseActivity  implements UserListener{
+public class UserActivity extends BaseActivity implements UserListener {
 
     private ActivityUserBinding binding;
     private Preferencemanager preferencemanager;
@@ -47,12 +54,13 @@ public class UserActivity extends BaseActivity  implements UserListener{
                             user.name = queryDocumentSnapshot.getString(Constants.KEY_NAME);
                             user.email = queryDocumentSnapshot.getString(Constants.KEY_EMAIL);
                             user.image = queryDocumentSnapshot.getString(Constants.KEY_image);
+                            Log.e("image",user.image);
                             user.token = queryDocumentSnapshot.getString(Constants.KEY_FCM_TOKEN);
                             user.id = queryDocumentSnapshot.getId();
                             users.add(user);
                         }
                         if (users.size() > 0) {
-                            UserAdapter userAdapter = new UserAdapter(users,this);
+                            UserAdapter userAdapter = new UserAdapter(users,this,this);
                             binding.userRecycleView.setAdapter(userAdapter);
                             binding.userRecycleView.setVisibility(View.VISIBLE);
                         } else {
@@ -64,6 +72,10 @@ public class UserActivity extends BaseActivity  implements UserListener{
                 }
         );
 
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private void showError() {
@@ -81,9 +93,10 @@ public class UserActivity extends BaseActivity  implements UserListener{
 
     @Override
     public void onUserClicked(UserModel user) {
-        Intent intent = new Intent(getApplicationContext(),ChatActivity.class);
+        Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
         intent.putExtra(Constants.KEY_USER,user);
         startActivity(intent);
         finish();
     }
+
 }

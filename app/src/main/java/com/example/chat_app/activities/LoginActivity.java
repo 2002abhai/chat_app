@@ -1,4 +1,4 @@
-package com.example.chat_app;
+package com.example.chat_app.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -8,11 +8,11 @@ import android.util.Patterns;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.chat_app.uitilies.Constants;
+import com.example.chat_app.uitilies.Preferencemanager;
 import com.example.chat_app.databinding.ActivityLoginBinding;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import org.w3c.dom.Document;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -24,7 +24,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         preferencemanager = new Preferencemanager(getApplicationContext());
         if(preferencemanager.getBoolean(Constants.KEY_IS_SIGN_IN)){
-            Intent intent = new Intent(getApplicationContext(),MainActivity.class);
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             startActivity(intent);
             finish();
             }
@@ -35,7 +35,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setListener(){
         binding.textCreateNewAccount.setOnClickListener(v ->
-                startActivity(new Intent(getApplicationContext(),RegisterActivity.class)));
+                startActivity(new Intent(getApplicationContext(), RegisterActivity.class)));
         binding.buttonLogin.setOnClickListener(v -> {
             if (isValidLoginDetail()) {
                 login();

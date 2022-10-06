@@ -16,4 +16,12 @@
     <string name="type_a_message">Type a message</string>
     <string name="online">Online</string>
     <string name="default_notification_channel_id">com.examole.chat_app</string>
+    <string name="onboarding_title1">Instant Setup</string>
+    <string name="onboarding_desc1">Set up or join a video/audio meeting or conference instantly</string>
+    <string name="onboarding_title2">Everywhere Together</string>
+    <string name="onboarding_title3">Instant Messaging</string>
+    <string name="onboarding_title4">Schedule Meetings</string>
+    <string name="onboarding_desc2">Enjoy high quality audio &amp; video anywhere and stay in touch.</string>
+    <string name="onboarding_desc3">Stay connected with instant messaging in between the meeting.</string>
+    <string name="onboarding_desc4">Schedule your meetings and conferences with ease.</string>
 </resources>

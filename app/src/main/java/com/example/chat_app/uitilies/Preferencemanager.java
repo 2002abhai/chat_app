@@ -1,4 +1,4 @@
-package com.example.chat_app;
+package com.example.chat_app.uitilies;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -31,7 +31,7 @@ public class Preferencemanager {
         return preferences.getString(value,null);
     }
 
-    void clear(){
+    public void clear(){
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
         editor.apply();

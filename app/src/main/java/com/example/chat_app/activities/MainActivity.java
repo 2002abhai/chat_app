@@ -1,5 +1,6 @@
-package com.example.chat_app;
+package com.example.chat_app.activities;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,6 +14,13 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
+import com.bumptech.glide.Glide;
+import com.example.chat_app.model.ChatMessage;
+import com.example.chat_app.uitilies.Constants;
+import com.example.chat_app.listner.ConversionListener;
+import com.example.chat_app.uitilies.Preferencemanager;
+import com.example.chat_app.adapter.RecentConversationsAdapter;
+import com.example.chat_app.model.UserModel;
 import com.example.chat_app.databinding.ActivityMainBinding;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
@@ -30,7 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainActivity extends BaseActivity implements ConversionListener{
+public class MainActivity extends BaseActivity implements ConversionListener {
 
     private ActivityMainBinding binding;
     private Preferencemanager preferencemanager;
@@ -54,7 +62,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
 
     private void init(){
         conversations = new ArrayList<>();
-        recentConversationsAdapter =  new RecentConversationsAdapter(conversations,this);
+        recentConversationsAdapter =  new RecentConversationsAdapter(conversations,this,this);
         binding.conversationsRecycleView.setAdapter(recentConversationsAdapter);
         database = FirebaseFirestore.getInstance();
     }
@@ -62,7 +70,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
     private void setListeners(){
         binding.imageSignOut.setOnClickListener(v -> signOut());
         binding.febNewChat.setOnClickListener(v ->
-                startActivity(new Intent(getApplicationContext(),UserActivity.class)));
+                startActivity(new Intent(getApplicationContext(), UserActivity.class)));
 
         binding.imageProfile.setOnClickListener(view -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -73,9 +81,8 @@ public class MainActivity extends BaseActivity implements ConversionListener{
 
     private void loadUserDetail() {
         binding.textName.setText(preferencemanager.getString(Constants.KEY_NAME));
-        byte[] bytes = Base64.decode(preferencemanager.getString(Constants.KEY_image), Base64.DEFAULT);
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        binding.imageProfile.setImageBitmap(bitmap);
+          String image = preferencemanager.getString(Constants.KEY_image);
+        Glide.with(this).load(image).into(binding.imageProfile);
     }
 
     private void showToast(String message) {
@@ -91,6 +98,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
                 .addSnapshotListener(eventListener);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private final EventListener<QuerySnapshot> eventListener = (value, error) -> {
         if(error != null){
             return;
@@ -136,7 +144,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
         }
     };
 
-    private String encodeImage(Bitmap bitmap) {
+    /*private String encodeImage(Bitmap bitmap) {
         int previewWidth = 150;
         int previewHeight = bitmap.getHeight() * previewWidth / bitmap.getWidth();
         Bitmap previewBitmap = Bitmap.createScaledBitmap(bitmap, previewWidth, previewHeight, false);
@@ -144,7 +152,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
         previewBitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteArrayOutputStream);
         byte[] bytes = byteArrayOutputStream.toByteArray();
         return Base64.encodeToString(bytes, Base64.DEFAULT);
-    }
+    }*/
 
     private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -153,11 +161,12 @@ public class MainActivity extends BaseActivity implements ConversionListener{
                     if (result.getData() != null) {
                         Uri imageUri = result.getData().getData();
                         try {
-                            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                            Glide.with(this).load(imageUri).into(binding.imageProfile);
+                           /* InputStream inputStream = getContentResolver().openInputStream(imageUri);
                             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                             binding.imageProfile.setImageBitmap(bitmap);
-                            encodeImage = encodeImage(bitmap);
-                        } catch (FileNotFoundException e) {
+                            encodeImage = encodeImage(bitmap);*/
+                        } catch (Error e) {
                             e.printStackTrace();
                         }
                     }
@@ -197,7 +206,7 @@ public class MainActivity extends BaseActivity implements ConversionListener{
 
     @Override
     public void onConversionListener(UserModel user) {
-        Intent intent = new Intent(getApplicationContext(),ChatActivity.class);
+        Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
         intent.putExtra(Constants.KEY_USER,user);
         startActivity(intent);
     }

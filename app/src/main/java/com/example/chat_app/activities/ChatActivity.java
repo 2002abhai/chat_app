@@ -1,5 +1,7 @@
-package com.example.chat_app;
-
+package com.example.chat_app.activities;
+import android.annotation.SuppressLint;
+import android.app.NotificationManager;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -9,8 +11,18 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.RemoteInput;
 
+import com.bumptech.glide.Glide;
 import com.example.chat_app.databinding.ActivityChatBinding;
+import com.example.chat_app.network.ApiClient;
+import com.example.chat_app.network.ApiService;
+import com.example.chat_app.adapter.ChatAdapter;
+import com.example.chat_app.model.ChatMessage;
+import com.example.chat_app.uitilies.Constants;
+import com.example.chat_app.uitilies.Preferencemanager;
+import com.example.chat_app.R;
+import com.example.chat_app.model.UserModel;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
@@ -30,7 +42,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 import retrofit2.Call;
@@ -48,11 +59,24 @@ public class ChatActivity extends BaseActivity {
     private String conversationId = null;
     private Boolean isReceiverAvailable = false;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityChatBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        Bundle remoteReply = RemoteInput.getResultsFromIntent(getIntent());
+
+        if(remoteReply != null){
+            String message = remoteReply.getCharSequence("TEXT_REPLY").toString();
+           Log.e(message,"message"+message);
+
+        }
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.cancel(101);
+
         setListeners();
         loadReceiverDetails();
         init();
@@ -64,20 +88,26 @@ public class ChatActivity extends BaseActivity {
         chatMessages = new ArrayList<>();
         chatAdapter = new ChatAdapter(
                 chatMessages,
-                getBitmapFromEncodedString(receiverUser.image),
-                preferencemanager.getString(Constants.KEY_USER_ID)
+                receiverUser.image,
+                preferencemanager.getString(Constants.KEY_USER_ID),
+                this
         );
+        Glide.with(this).load(receiverUser.image).into(binding.chatImageProfile);
+//  binding.chatImageProfile.setImageBitmap(getBitmapFromEncodedString(receiverUser.image));
         binding.chatRecycleView.setAdapter(chatAdapter);
         database = FirebaseFirestore.getInstance();
     }
 
     private void sendMessage() {
+        DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+      String id = ref.getId();
         HashMap<String, Object> message = new HashMap<>();
         message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
+        message.put("id",id);
         message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
         message.put(Constants.KEY_MESSAGE, binding.inputMessage.getText().toString());
         message.put(Constants.KEY_TIMESTAMP, new Date());
-        database.collection(Constants.KEY_COLLECTION_CHAT).add(message);
+        database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
         if (conversationId != null) {
             updateConversion(binding.inputMessage.getText().toString());
         } else {
@@ -92,19 +122,19 @@ public class ChatActivity extends BaseActivity {
             conversion.put(Constants.KEY_TIMESTAMP, new Date());
             addConversion(conversion);
         }
-        if(!isReceiverAvailable){
+        if (!isReceiverAvailable) {
             try {
                 JSONObject data = new JSONObject();
                 data.put("title", preferencemanager.getString(Constants.KEY_NAME));
                 data.put("body", binding.inputMessage.getText().toString());
 
                 JSONObject body = new JSONObject();
-                body.put("notification",data);
+                body.put("notification", data);
                 body.put("to", receiverUser.token);
 
                 sendNotification(body.toString());
 
-            }catch (Exception exception){
+            } catch (Exception exception) {
                 showToast(exception.getMessage());
             }
         }
@@ -116,29 +146,30 @@ public class ChatActivity extends BaseActivity {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    private void sendNotification(String messageBody){
-        ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody).enqueue(new Callback<String>() {
+    private void sendNotification(String messageBody) {
+        ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody ).enqueue(new Callback<String>() {
             @Override
             public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
-                if(response.isSuccessful()){
+                if (response.isSuccessful()) {
                     try {
-                        if(response.body() != null){
+                        if (response.body() != null) {
                             JSONObject responseJson = new JSONObject(response.body());
                             JSONArray result = responseJson.getJSONArray("results");
-                            if(responseJson.getInt("failure") == 1){
+                            if (responseJson.getInt("failure") == 1) {
                                 JSONObject error = (JSONObject) result.get(0);
                                 showToast(error.getString("error"));
                                 return;
                             }
                         }
-                    }catch (JSONException e){
-                            e.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                     showToast("Notification sent successfully ");
-                }else {
-                    showToast("Error :"+response.code());
+                } else {
+                    showToast("Error :" + response.code());
                 }
             }
+
             @Override
             public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
                 showToast(t.getMessage());
@@ -160,15 +191,15 @@ public class ChatActivity extends BaseActivity {
                                     isReceiverAvailable = availability == 1;
                                 }
                                 receiverUser.token = value.getString(Constants.KEY_FCM_TOKEN);
-                                if(receiverUser.image == null){
+                                if (receiverUser.image == null) {
                                     receiverUser.image = value.getString(Constants.KEY_image);
-                                    chatAdapter.setReceiverProfileImage(getBitmapFromEncodedString(receiverUser.image));
-                                    chatAdapter.notifyItemRangeChanged(0,chatMessages.size());
+                                    chatAdapter.setReceiverProfileImage(receiverUser.image);
+                                    chatAdapter.notifyItemRangeChanged(0, chatMessages.size());
                                 }
                             }
-                            if(isReceiverAvailable){
+                            if (isReceiverAvailable) {
                                 binding.textAvailability.setVisibility(View.VISIBLE);
-                            }else {
+                            } else {
                                 binding.textAvailability.setVisibility(View.GONE);
                             }
 
@@ -188,6 +219,7 @@ public class ChatActivity extends BaseActivity {
 
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private final EventListener<QuerySnapshot> eventListener = ((value, error) -> {
         if (error != null) {
             return;
@@ -198,6 +230,7 @@ public class ChatActivity extends BaseActivity {
 
                 if (documentChange.getType() == DocumentChange.Type.ADDED) {
                     ChatMessage chatMessage = new ChatMessage();
+                    chatMessage.id = documentChange.getDocument().getString("id");
                     chatMessage.senderId = documentChange.getDocument().getString(Constants.KEY_SENDER_ID);
                     chatMessage.receiverId = documentChange.getDocument().getString(Constants.KEY_RECEIVER_ID);
                     chatMessage.message = documentChange.getDocument().getString(Constants.KEY_MESSAGE);
@@ -221,14 +254,6 @@ public class ChatActivity extends BaseActivity {
         }
     });
 
-    private Bitmap getBitmapFromEncodedString(String encodedImage) {
-        if(encodedImage != null){
-            byte[] bytes = Base64.decode(encodedImage, Base64.DEFAULT);
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        }else {
-            return null;
-        }
-    }
 
     private void loadReceiverDetails() {
         receiverUser = (UserModel) getIntent().getSerializableExtra(Constants.KEY_USER);
@@ -237,14 +262,40 @@ public class ChatActivity extends BaseActivity {
 
     private void setListeners() {
         binding.imageBack.setOnClickListener(v -> onBackPressed());
-        binding.layoutSend.setOnClickListener(v ->{
-            String data = binding.inputMessage.getText().toString();
-            Log.e("data print", binding.inputMessage.getText().toString());
-            Log.e("data print", data);
-            if(binding.inputMessage.getText().toString().isEmpty() || binding.inputMessage.getText() == null){
+//        binding.imagedelete.setOnClickListener(v -> deleteMessage());
+        binding.call.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
+                    showToast(receiverUser.token +"is not available to video call");
+                }else{
+                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
+                    intent.putExtra("user", receiverUser);
+                    intent.putExtra("token", receiverUser.token);
+                    intent.putExtra("type", "audio");
+                    startActivity(intent);
+                }
+            }
+        });
+        binding.vedio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
+                    showToast(receiverUser.token +"is not available to video call");
+                }else{
+                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
+                    intent.putExtra("user", receiverUser);
+                    intent.putExtra("token", receiverUser.token);
+                    intent.putExtra("type", "video");
+                    startActivity(intent);
+                }
+            }
+        });
+        binding.layoutSend.setOnClickListener(v -> {
+            if (binding.inputMessage.getText().toString().isEmpty() || binding.inputMessage.getText() == null) {
                 showToast("Please Enter Any Message");
-            }else {
-                sendMessage();;
+            } else {
+                sendMessage();
             }
         });
     }
@@ -252,6 +303,7 @@ public class ChatActivity extends BaseActivity {
     private String getReadableDateTime(Date date) {
         return new SimpleDateFormat("MMMM dd,yyyy - hh.mm a", Locale.getDefault()).format(date);
     }
+
 
     private void checkForConversion() {
         if (chatMessages.size() != 0) {
@@ -299,4 +351,5 @@ public class ChatActivity extends BaseActivity {
         super.onResume();
         listenAvailabilityOfReceiver();
     }
+
 }

@@ -8,5 +8,9 @@
     <color name="input_background">#ECECEC</color>
     <color name="icon_background">#20FFFFFF</color>
     <color name="error">#B00020</color>
+    <color name="green">#2db83d</color>
+    <color name="colorTextIcons">#FFFFFF</color>
+    <color name="colormeetingInvitationstart">#4004BB</color>
+    <color name="colormeetingInvitationend">#8A1AAA</color>
     <color name="received_message_backgroung">#090D16</color>
 </resources>

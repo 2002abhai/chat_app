@@ -1,4 +1,4 @@
-package com.example.chat_app;
+package com.example.chat_app.uitilies;
 
 import java.util.HashMap;
 
@@ -30,20 +30,24 @@ public class Constants {
     public static final String REMOTE_MESSAGE_CONTENT_TYPE="Content-Type";
     public static final String REMOTE_MSG_DATA="data";
     public static final String REMOTE_MSG_REGISTRATION_IDS="registration_ids";
+    public static final String REMOTE_MSG_MEETING_ROOM="meetingRoom";
+    public static final String REMOTE_MSG_INVITATION_RESPONSE="invitationResponse";
+    public static final String REMOTE_MSG_INVITATION_ACCEPTED="accepted";
+    public static final String REMOTE_MSG_INVITATION_REJECTED="rejected";
+    public static final String REMOTE_MSG_INVITATION_CANCELLED="cancelled";
+    public static final String REMOTE_MSG_MEETING_TYPE="meetingType";
+    public static final String REMOTE_MSG_INVITER_TOKEN="inviteToken";
+    public static final String REMOTE_MSG_TYPE="type";
+    public static final String REMOTE_MSG_INVITATION="invitation";
 
-    public static HashMap<String,String> remoteMsgHeaders = null;
+
+    public static HashMap<String,String> remoteMsgHeaders = new HashMap<>();
     public static HashMap<String,String> getRemoteMsgHeaders(){
-        if(remoteMsgHeaders == null){
-            remoteMsgHeaders = new HashMap<>();
             remoteMsgHeaders.put(
                     REMOTE_MESSAGE_AUTHORIZATION,
-                    "key=AAAA5Hnm8Zw:APA91bEvTay-_wtVX3arp5i1ZsR7FKNtWogKh9AZ300raTbkOVZfdqRoa30-SY9udaNCfeLbtKiOqwY64YxvgOxsGpbfnMk2LSDCyPWSiF6n5ViKdnMNkdlNsz1YtQW7ee6ZRvonz-3x"
+                    "key= AAAA5Hnm8Zw:APA91bEvTay-_wtVX3arp5i1ZsR7FKNtWogKh9AZ300raTbkOVZfdqRoa30-SY9udaNCfeLbtKiOqwY64YxvgOxsGpbfnMk2LSDCyPWSiF6n5ViKdnMNkdlNsz1YtQW7ee6ZRvonz-3x"
             );
-            remoteMsgHeaders.put(
-                    REMOTE_MESSAGE_CONTENT_TYPE,
-                    "application/json"
-            );
-        }
+            remoteMsgHeaders.put(REMOTE_MESSAGE_CONTENT_TYPE, "application/json");
         return remoteMsgHeaders;
     }
 

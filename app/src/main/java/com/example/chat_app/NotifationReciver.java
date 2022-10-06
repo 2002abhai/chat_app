@@ -9,6 +9,8 @@ import android.os.Bundle;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.RemoteInput;
 
+import com.example.chat_app.uitilies.Constants;
+
 import java.util.Random;
 
 /**
@@ -16,8 +18,12 @@ import java.util.Random;
  */
 public class NotifationReciver extends BroadcastReceiver {
 
+
+
     @Override
     public void onReceive(Context context, Intent intent) {
+
+
         //getting the remote input bundle from intent
         Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
         int notificationId = new Random().nextInt();
@@ -40,4 +46,5 @@ public class NotifationReciver extends BroadcastReceiver {
         }
 
     }
+
 }

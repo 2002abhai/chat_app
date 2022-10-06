@@ -1,10 +1,12 @@
-package com.example.chat_app;
+package com.example.chat_app.activities;
 
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.chat_app.uitilies.Constants;
+import com.example.chat_app.uitilies.Preferencemanager;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 

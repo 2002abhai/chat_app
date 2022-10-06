@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
     android:background="@color/primary"
-    tools:context=".ChatActivity">
+    tools:context=".activities.ChatActivity">
 
     <View
         android:id="@+id/viewBackground"
@@ -39,23 +39,64 @@
         app:tint="@color/white"/>
 
     <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/imageInfo"
+        android:id="@+id/imagedelete"
         android:layout_width="@dimen/_30sdp"
         android:layout_height="@dimen/_30sdp"
         android:layout_marginTop="@dimen/_12sdp"
         android:layout_marginEnd="@dimen/_16sdp"
-        android:layout_marginRight="@dimen/_16sdp"
+        android:layout_marginRight="@dimen/_30sdp"
         android:padding="@dimen/_4sdp"
-        android:src="@drawable/ic_outline_info_24"
+        android:src="@drawable/ic_delete"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/white"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/call"
+        android:layout_width="@dimen/_30sdp"
+        android:layout_height="@dimen/_30sdp"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:layout_marginEnd="@dimen/_6sdp"
+        android:padding="@dimen/_3sdp"
+        android:src="@drawable/ic_call"
+        app:layout_constraintBottom_toBottomOf="@id/textName"
+        app:layout_constraintEnd_toStartOf="@id/vedio"
+        app:layout_constraintStart_toEndOf="@id/textName"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/vedio"
+        android:layout_width="@dimen/_30sdp"
+        android:layout_height="@dimen/_30sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:src="@drawable/ic_videocam"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white"/>
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:id="@+id/chatImageProfile"
+        android:layout_width="@dimen/_30sdp"
+        android:layout_height="@dimen/_30sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:layout_marginStart="@dimen/_8sdp"
+        android:layout_marginEnd="@dimen/_8sdp"
+        android:background="@drawable/background_image"
+        android:gravity="center"
+        android:scaleType="centerCrop"
+        app:riv_corner_radius="@dimen/_8sdp"
+        app:layout_constraintEnd_toStartOf="@id/textName"
+        app:layout_constraintStart_toEndOf="@id/imageBack"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints" />
 
     <TextView
         android:id="@+id/textName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/_8sdp"
+        android:layout_marginStart="@dimen/_2sdp"
         android:layout_marginEnd="@dimen/_8sdp"
         android:ellipsize="end"
         android:gravity="center"
@@ -63,9 +104,9 @@
         android:textColor="@color/white"
         android:textSize="@dimen/_14ssp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/imageBack"
-        app:layout_constraintEnd_toStartOf="@id/imageInfo"
-        app:layout_constraintStart_toEndOf="@id/imageBack"
+        app:layout_constraintBottom_toBottomOf="@id/call"
+        app:layout_constraintEnd_toStartOf="@id/call"
+        app:layout_constraintStart_toEndOf="@id/chatImageProfile"
         app:layout_constraintTop_toTopOf="@id/imageBack"/>
 
     <View
@@ -128,7 +169,7 @@
         android:layout_width="0dp"
         android:layout_height="@dimen/_40sdp"
         android:layout_marginStart="@dimen/_16sdp"
-        android:layout_marginLeft="@dimen/_16sdp"
+        android:layout_marginLeft="@dimen/_10sdp"
         android:layout_marginEnd="@dimen/_8sdp"
         android:layout_marginRight="@dimen/_8sdp"
         android:layout_marginBottom="@dimen/_12sdp"

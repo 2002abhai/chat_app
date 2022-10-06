@@ -1,34 +1,43 @@
-package com.example.chat_app;
+package com.example.chat_app.adapter;
 
-import android.graphics.Bitmap;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.example.chat_app.model.ChatMessage;
 import com.example.chat_app.databinding.ItemContainerRecivedMessageBinding;
 import com.example.chat_app.databinding.ItemConteinerSentMessageBinding;
+import com.example.chat_app.uitilies.Constants;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
+
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
 
     private final List<ChatMessage> chatMessages;
-    private  Bitmap receiverProfileImage;
+    private  String receiverProfileImage;
     private final String senderId;
+    private static Context context;
+
 
     public static final int VIEW_TYPE_SENT = 1;
+    public static final int VIEW_TYPE_DELETE = 1;
     public static final int VIEW_TYPE_RECEIVED = 2;
 
-    public void setReceiverProfileImage(Bitmap bitmap){
-        receiverProfileImage = bitmap;
+    public void setReceiverProfileImage(String  image){
+        receiverProfileImage = image;
     }
 
-    public ChatAdapter(List<ChatMessage> chatMessages, Bitmap receiverProfileImage, String senderId) {
+    public ChatAdapter(List<ChatMessage> chatMessages, String receiverProfileImage, String senderId,Context context) {
         this.chatMessages = chatMessages;
         this.receiverProfileImage = receiverProfileImage;
         this.senderId = senderId;
+        this.context = context;
     }
 
     @NonNull
@@ -62,6 +71,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             ((ReceivedMessageViewHolder) holder).setData(chatMessages.get(position),receiverProfileImage);
         }
 
+        if(getItemViewType(position) == VIEW_TYPE_DELETE){
+            ((SentMessageViewHolder) holder).deleteData(chatMessages.get(position));
+        }
     }
 
     @Override
@@ -80,6 +92,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
 
     static class SentMessageViewHolder extends RecyclerView.ViewHolder{
 
+
         private final ItemConteinerSentMessageBinding binding;
 
         SentMessageViewHolder( ItemConteinerSentMessageBinding itemContainerSentMessageBinding){
@@ -92,6 +105,13 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             binding.textMessage.setText(chatMessage.message);
             binding.textDateTime.setText(chatMessage.dateTime);
         }
+        void deleteData(ChatMessage chatMessage){
+            FirebaseFirestore database = FirebaseFirestore.getInstance();
+            binding.textMessage.setOnClickListener(view -> {
+                database.collection(Constants.KEY_COLLECTION_CHAT).document(chatMessage.id).delete();
+                database.collection(Constants.KEY_COLLECTION_CONVERSATION).document(chatMessage.id).delete();
+            });
+        }
     }
 
     static class ReceivedMessageViewHolder extends RecyclerView.ViewHolder{
@@ -102,11 +122,13 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             super(itemContainerReceiveMessageBinding.getRoot());
             binding = itemContainerReceiveMessageBinding;
         }
-        void setData(ChatMessage chatMessage,Bitmap receiverProfileImage){
+
+        void setData(ChatMessage chatMessage, String receiverProfileImage){
             binding.textMessage.setText(chatMessage.message);
             binding.textDateTime.setText(chatMessage.dateTime);
             if(receiverProfileImage != null){
-                binding.imageProfile.setImageBitmap(receiverProfileImage);
+                Glide.with(context).load(receiverProfileImage).into(binding.imageProfile);
+//                binding.imageProfile.setImageBitmap(receiverProfileImage);
             }
         }
     }
