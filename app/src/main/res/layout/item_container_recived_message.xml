@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -21,7 +22,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_4sdp"
-        android:layout_marginLeft="@dimen/_4sdp"
         android:background="@drawable/background_recived_message"
         android:paddingStart="@dimen/_12sdp"
         android:paddingTop="@dimen/_8sdp"
@@ -43,6 +43,108 @@
         android:textSize="@dimen/_8ssp"
         app:layout_constraintStart_toStartOf="@id/textMessage"
         app:layout_constraintTop_toBottomOf="@id/textMessage" />
+
+
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:id="@+id/imageProfileImage"
+        android:layout_width="@dimen/_25sdp"
+        android:layout_height="@dimen/_25sdp"
+        android:background="@drawable/background_image"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/images"
+        app:layout_constraintStart_toStartOf="parent"
+        app:riv_oval="true"/>
+
+    <ImageView
+        android:id="@+id/images"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:paddingStart="@dimen/_12sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:paddingBottom="@dimen/_8sdp"
+        android:visibility="gone"
+        android:layout_alignParentEnd="true"
+        android:adjustViewBounds="true"
+        app:layout_constraintWidth_max="wrap"
+        android:background="@drawable/background_recived_message"
+        app:layout_constraintStart_toEndOf="@id/imageProfileImage"
+        app:layout_constraintTop_toTopOf="parent"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/imageDateTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:visibility="gone"
+        android:textColor="@color/secondary_text"
+        android:textSize="@dimen/_8ssp"
+        app:layout_constraintStart_toStartOf="@id/images"
+        app:layout_constraintTop_toBottomOf="@id/images" />
+
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:id="@+id/documentImageProfile"
+        android:layout_width="@dimen/_25sdp"
+        android:layout_height="@dimen/_25sdp"
+        android:background="@drawable/background_image"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="@id/documentSend"
+        app:layout_constraintStart_toStartOf="parent"
+        app:riv_oval="true"/>
+
+    <LinearLayout
+        android:id="@+id/documentSend"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/documentImageProfile"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"
+        android:background="@drawable/background_recived_message"
+        app:layout_constraintWidth_max="wrap"
+        tools:ignore="MissingConstraints">
+
+        <ImageView
+            android:id="@+id/documentImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/_12sdp"
+            android:paddingTop="@dimen/_8sdp"
+            android:visibility="gone"
+            android:paddingEnd="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_8sdp"
+            android:src="@drawable/ic_baseline_picture_as_pdf_24"
+            android:scaleType="fitCenter"
+            app:tint="@color/white"
+            app:layout_constraintWidth_percent="0.8" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/pdfDownload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/_12sdp"
+            android:paddingTop="@dimen/_8sdp"
+            android:paddingEnd="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_8sdp"
+            android:visibility="gone"
+            android:src="@drawable/ic_baseline_download_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white"/>
+
+        <TextView
+            android:id="@+id/documentTextDateTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:textColor="@color/secondary_text"
+            android:visibility="gone"
+            android:textSize="@dimen/_8ssp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/documentImages" />
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

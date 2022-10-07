@@ -23,12 +23,14 @@
         <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_out_going.xml" value="0.3546875" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_register.xml" value="0.2962962962962963" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/activity_user.xml" value="0.3546875" />
+        <entry key="..\:/project/chat_app/app/src/main/res/layout/image_show.xml" value="0.3536458333333333" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_recent_conversion .xml" value="0.3546875" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_recent_conversion.xml" value="0.3536458333333333" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_recived_message.xml" value="0.3546875" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/item_container_user.xml" value="0.3536458333333333" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/item_conteiner_sent_message.xml" value="0.3536458333333333" />
         <entry key="..\:/project/chat_app/app/src/main/res/layout/layout_onboarding_slider.xml" value="0.3546875" />
+        <entry key="..\:/project/chat_app/app/src/main/res/xml/provider_paths.xml" value="0.175" />
       </map>
     </option>
   </component>

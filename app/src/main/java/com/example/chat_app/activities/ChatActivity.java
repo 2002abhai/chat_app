@@ -1,17 +1,22 @@
 package com.example.chat_app.activities;
+
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.NotificationManager;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Base64;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.RemoteInput;
+import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
 import com.example.chat_app.databinding.ActivityChatBinding;
@@ -21,20 +26,25 @@ import com.example.chat_app.adapter.ChatAdapter;
 import com.example.chat_app.model.ChatMessage;
 import com.example.chat_app.uitilies.Constants;
 import com.example.chat_app.uitilies.Preferencemanager;
-import com.example.chat_app.R;
 import com.example.chat_app.model.UserModel;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +58,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+
 public class ChatActivity extends BaseActivity {
 
     private ActivityChatBinding binding;
@@ -58,6 +69,12 @@ public class ChatActivity extends BaseActivity {
     private FirebaseFirestore database;
     private String conversationId = null;
     private Boolean isReceiverAvailable = false;
+    FirebaseStorage storage;
+    StorageReference storageReference;
+    Uri imageUri;
+    Uri documentUri;
+    UploadTask uploadImage;
+    String downloadUri;
 
 
     @Override
@@ -65,12 +82,13 @@ public class ChatActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityChatBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        storage = FirebaseStorage.getInstance();
+        storageReference = storage.getReference();
         Bundle remoteReply = RemoteInput.getResultsFromIntent(getIntent());
 
-        if(remoteReply != null){
+        if (remoteReply != null) {
             String message = remoteReply.getCharSequence("TEXT_REPLY").toString();
-           Log.e(message,"message"+message);
+            Log.e(message, "message" + message);
 
         }
 
@@ -83,6 +101,7 @@ public class ChatActivity extends BaseActivity {
         listenMessages();
     }
 
+
     private void init() {
         preferencemanager = new Preferencemanager(getApplicationContext());
         chatMessages = new ArrayList<>();
@@ -90,20 +109,83 @@ public class ChatActivity extends BaseActivity {
                 chatMessages,
                 receiverUser.image,
                 preferencemanager.getString(Constants.KEY_USER_ID),
-                this
+                this,
+                downloadUri
         );
         Glide.with(this).load(receiverUser.image).into(binding.chatImageProfile);
-//  binding.chatImageProfile.setImageBitmap(getBitmapFromEncodedString(receiverUser.image));
         binding.chatRecycleView.setAdapter(chatAdapter);
         database = FirebaseFirestore.getInstance();
     }
 
+    private void setListeners() {
+        binding.imageBack.setOnClickListener(v -> onBackPressed());
+        binding.layoutSendDocument.setOnClickListener(view ->showImagePicDialog());
+        binding.call.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
+                    showToast(receiverUser + "is not available to video call");
+                } else {
+                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
+                    intent.putExtra("user", receiverUser);
+                    intent.putExtra("type", "audio");
+                    startActivity(intent);
+                }
+            }
+        });
+        binding.vedio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
+                    showToast(receiverUser + "is not available to video call");
+                } else {
+                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
+                    intent.putExtra("user", receiverUser);
+                    intent.putExtra("type", "video");
+                    startActivity(intent);
+                }
+            }
+        });
+        binding.layoutSend.setOnClickListener(v -> {
+            if (binding.inputMessage.getText().toString().isEmpty() || binding.inputMessage.getText() == null) {
+                showToast("Please Enter Any Message");
+            } else {
+                sendMessage();
+            }
+        });
+    }
+
+    private void showImagePicDialog() {
+        String options[] = {"Image", "Document"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
+        builder.setTitle("Select Option");
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                if (which == 0) {
+                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    pickImage.launch(intent);
+//                  sendImage();
+                } else if (which == 1) {
+                    Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+                    chooseFile.setType("*/*");
+                    chooseFile = Intent.createChooser(chooseFile, "Choose a file");
+                    pickDocument.launch(chooseFile);
+                }
+            }
+        });
+        builder.create().show();
+    }
+
     private void sendMessage() {
         DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
-      String id = ref.getId();
+        String id = ref.getId();
         HashMap<String, Object> message = new HashMap<>();
         message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
-        message.put("id",id);
+        message.put(Constants.KEY_CHAT_ID, id);
+        message.put(Constants.MESSAGE_TYPE, "text");
         message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
         message.put(Constants.KEY_MESSAGE, binding.inputMessage.getText().toString());
         message.put(Constants.KEY_TIMESTAMP, new Date());
@@ -142,12 +224,106 @@ public class ChatActivity extends BaseActivity {
 
     }
 
+    private void sendImage() {
+        StorageReference ref = storageReference.child("images/" + imageUri.getLastPathSegment());
+        uploadImage = ref.putFile(imageUri);
+        uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                while (!uriTask.isSuccessful()) ;
+                downloadUri = uriTask.getResult().toString();
+
+                if (uriTask.isSuccessful()) {
+                    DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+                    String id = ref.getId();
+                    HashMap<String, Object> message = new HashMap<>();
+                    message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
+                    message.put(Constants.KEY_CHAT_ID, id);
+                    message.put(Constants.MESSAGE_TYPE, "image");
+                    message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+                    message.put(Constants.KEY_MESSAGE, downloadUri);
+                    message.put(Constants.KEY_TIMESTAMP, new Date());
+                    database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+                }
+
+
+            }
+        });
+
+    }
+
+    private void sendDocument() {
+        StorageReference ref = storageReference.child("document/" + documentUri.getLastPathSegment());
+        uploadImage = ref.putFile(documentUri);
+        uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                while (!uriTask.isSuccessful()) ;
+                downloadUri = uriTask.getResult().toString();
+
+                if (uriTask.isSuccessful()) {
+                    DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+                    String id = ref.getId();
+                    HashMap<String, Object> message = new HashMap<>();
+                    message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
+                    message.put(Constants.KEY_CHAT_ID, id);
+                    message.put(Constants.MESSAGE_TYPE, "document");
+                    message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+                    message.put(Constants.KEY_MESSAGE, downloadUri);
+                    message.put(Constants.KEY_TIMESTAMP, new Date());
+                    database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+                }
+
+
+            }
+        });
+
+
+
+    }
+
+    private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        imageUri = result.getData().getData();
+                        sendImage();
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> pickDocument = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        documentUri = result.getData().getData();
+                        sendDocument();
+                    }
+                }
+            }
+    );
+
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
+   /* void deleteData(){
+        FirebaseFirestore database = FirebaseFirestore.getInstance();
+        sentMessageBinding.textMessage.setOnClickListener(view -> {
+            binding.imagedelete.setVisibility(View.VISIBLE);
+            binding.vedio.setVisibility(View.GONE);
+            database.collection(Constants.KEY_COLLECTION_CHAT).document("id").delete();
+//            database.collection(Constants.KEY_COLLECTION_CONVERSATION).document(chatMessage.id).delete();
+            chatAdapter.notify();
+        });
+    }*/
 
     private void sendNotification(String messageBody) {
-        ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody ).enqueue(new Callback<String>() {
+        ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody).enqueue(new Callback<String>() {
             @Override
             public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
                 if (response.isSuccessful()) {
@@ -234,6 +410,7 @@ public class ChatActivity extends BaseActivity {
                     chatMessage.senderId = documentChange.getDocument().getString(Constants.KEY_SENDER_ID);
                     chatMessage.receiverId = documentChange.getDocument().getString(Constants.KEY_RECEIVER_ID);
                     chatMessage.message = documentChange.getDocument().getString(Constants.KEY_MESSAGE);
+                    chatMessage.type = documentChange.getDocument().getString(Constants.MESSAGE_TYPE);
                     chatMessage.dateTime = getReadableDateTime(documentChange.getDocument().getDate(Constants.KEY_TIMESTAMP));
                     chatMessage.dateObject = documentChange.getDocument().getDate(Constants.KEY_TIMESTAMP);
                     chatMessages.add(chatMessage);
@@ -260,45 +437,6 @@ public class ChatActivity extends BaseActivity {
         binding.textName.setText(receiverUser.name);
     }
 
-    private void setListeners() {
-        binding.imageBack.setOnClickListener(v -> onBackPressed());
-//        binding.imagedelete.setOnClickListener(v -> deleteMessage());
-        binding.call.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
-                    showToast(receiverUser.token +"is not available to video call");
-                }else{
-                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
-                    intent.putExtra("user", receiverUser);
-                    intent.putExtra("token", receiverUser.token);
-                    intent.putExtra("type", "audio");
-                    startActivity(intent);
-                }
-            }
-        });
-        binding.vedio.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (receiverUser.token == null || receiverUser.token.trim().isEmpty()) {
-                    showToast(receiverUser.token +"is not available to video call");
-                }else{
-                    Intent intent = new Intent(getApplicationContext(), OutGoingActivity.class);
-                    intent.putExtra("user", receiverUser);
-                    intent.putExtra("token", receiverUser.token);
-                    intent.putExtra("type", "video");
-                    startActivity(intent);
-                }
-            }
-        });
-        binding.layoutSend.setOnClickListener(v -> {
-            if (binding.inputMessage.getText().toString().isEmpty() || binding.inputMessage.getText() == null) {
-                showToast("Please Enter Any Message");
-            } else {
-                sendMessage();
-            }
-        });
-    }
 
     private String getReadableDateTime(Date date) {
         return new SimpleDateFormat("MMMM dd,yyyy - hh.mm a", Locale.getDefault()).format(date);
