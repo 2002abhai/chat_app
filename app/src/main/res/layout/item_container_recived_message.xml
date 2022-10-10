@@ -134,17 +134,76 @@
             app:layout_constraintTop_toTopOf="parent"
             app:tint="@color/white"/>
 
-        <TextView
-            android:id="@+id/documentTextDateTime"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/_4sdp"
-            android:textColor="@color/secondary_text"
-            android:visibility="gone"
-            android:textSize="@dimen/_8ssp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/documentImages" />
     </LinearLayout>
+    <TextView
+        android:id="@+id/documentTextDateTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:textColor="@color/secondary_text"
+        android:visibility="gone"
+        android:textSize="@dimen/_8ssp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/documentSend" />
+
+
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:id="@+id/wordImageProfile"
+        android:layout_width="@dimen/_25sdp"
+        android:layout_height="@dimen/_25sdp"
+        android:background="@drawable/background_image"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="@id/wordSend"
+        app:layout_constraintStart_toStartOf="parent"
+        app:riv_oval="true"/>
+
+    <LinearLayout
+        android:id="@+id/wordSend"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/documentImageProfile"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@drawable/background_recived_message"
+        app:layout_constraintWidth_max="wrap">
+
+        <ImageView
+            android:id="@+id/wordImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/_12sdp"
+            android:paddingTop="@dimen/_8sdp"
+            android:paddingEnd="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_8sdp"
+            android:src="@drawable/ic_word_icon"
+            android:scaleType="fitCenter"
+            app:tint="@color/white"
+            app:layout_constraintWidth_percent="0.8" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/wordDownload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/_12sdp"
+            android:paddingTop="@dimen/_8sdp"
+            android:paddingEnd="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_8sdp"
+            android:src="@drawable/ic_baseline_download_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white"/>
+
+    </LinearLayout>
+    <TextView
+        android:id="@+id/wordTextDateTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:textColor="@color/secondary_text"
+        android:textSize="@dimen/_8ssp"
+        app:layout_constraintStart_toStartOf="@id/wordSend"
+        app:layout_constraintTop_toBottomOf="@id/wordSend" />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

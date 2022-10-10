@@ -28,6 +28,7 @@ import com.example.chat_app.uitilies.Constants;
 import com.example.chat_app.uitilies.Preferencemanager;
 import com.example.chat_app.model.UserModel;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentChange;
@@ -37,6 +38,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -119,7 +121,7 @@ public class ChatActivity extends BaseActivity {
 
     private void setListeners() {
         binding.imageBack.setOnClickListener(v -> onBackPressed());
-        binding.layoutSendDocument.setOnClickListener(view ->showImagePicDialog());
+        binding.layoutSendDocument.setOnClickListener(view ->showPicDialog());
         binding.call.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -155,8 +157,8 @@ public class ChatActivity extends BaseActivity {
         });
     }
 
-    private void showImagePicDialog() {
-        String options[] = {"Image", "Document"};
+    private void showPicDialog() {
+        String options[] = {"Image", "Pdf","word"};
         AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
         builder.setTitle("Select Option");
         builder.setItems(options, new DialogInterface.OnClickListener() {
@@ -167,12 +169,16 @@ public class ChatActivity extends BaseActivity {
                     Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     pickImage.launch(intent);
-//                  sendImage();
                 } else if (which == 1) {
                     Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
                     chooseFile.setType("*/*");
                     chooseFile = Intent.createChooser(chooseFile, "Choose a file");
-                    pickDocument.launch(chooseFile);
+                    pickPdf.launch(chooseFile);
+                }else if (which == 2) {
+                    Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+                    chooseFile.setType("*/*");
+                    chooseFile = Intent.createChooser(chooseFile, "Choose a file");
+                    pickWord.launch(chooseFile);
                 }
             }
         });
@@ -253,8 +259,9 @@ public class ChatActivity extends BaseActivity {
 
     }
 
-    private void sendDocument() {
-        StorageReference ref = storageReference.child("document/" + documentUri.getLastPathSegment());
+    private void sendPdf() {
+        String fileName = System.currentTimeMillis()+".pdf";
+        StorageReference ref = storageReference.child("document/").child(fileName);
         uploadImage = ref.putFile(documentUri);
         uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
@@ -269,19 +276,45 @@ public class ChatActivity extends BaseActivity {
                     HashMap<String, Object> message = new HashMap<>();
                     message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
                     message.put(Constants.KEY_CHAT_ID, id);
-                    message.put(Constants.MESSAGE_TYPE, "document");
+                    message.put(Constants.MESSAGE_TYPE, "pdf");
                     message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
                     message.put(Constants.KEY_MESSAGE, downloadUri);
                     message.put(Constants.KEY_TIMESTAMP, new Date());
                     database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+                    StorageReference httpsReference = FirebaseStorage.getInstance().getReferenceFromUrl(downloadUri);
+                   httpsReference.getName();
                 }
-
-
             }
         });
+    }
 
+    private void sendWord() {
+        String fileName = System.currentTimeMillis()+".word";
+        StorageReference ref = storageReference.child("document/").child(fileName);
+        uploadImage = ref.putFile(documentUri);
+        uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                while (!uriTask.isSuccessful()) ;
+                downloadUri = uriTask.getResult().toString();
 
-
+                if (uriTask.isSuccessful()) {
+                    DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+                    String id = ref.getId();
+                    HashMap<String, Object> message = new HashMap<>();
+                    message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
+                    message.put(Constants.KEY_CHAT_ID, id);
+                    message.put(Constants.MESSAGE_TYPE, "word");
+                    message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+                    message.put(Constants.KEY_MESSAGE, downloadUri);
+                    message.put(Constants.KEY_TIMESTAMP, new Date());
+                    database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+                    StorageReference httpsReference = FirebaseStorage.getInstance().getReferenceFromUrl(downloadUri);
+                    httpsReference.getName();
+                }
+            }
+        });
     }
 
     private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
@@ -296,13 +329,25 @@ public class ChatActivity extends BaseActivity {
             }
     );
 
-    private final ActivityResultLauncher<Intent> pickDocument = registerForActivityResult(
+    private final ActivityResultLauncher<Intent> pickPdf = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK) {
                     if (result.getData() != null) {
                         documentUri = result.getData().getData();
-                        sendDocument();
+                        sendPdf();
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> pickWord = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        documentUri = result.getData().getData();
+                        sendWord();
                     }
                 }
             }

@@ -1,11 +1,12 @@
 package com.example.chat_app.adapter;
 
 import static android.content.ContentValues.TAG;
-
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.app.DownloadManager;
 import android.content.Context;
-import android.preference.PreferenceManager;
+import android.net.Uri;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +16,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.example.chat_app.R;
 import com.example.chat_app.model.ChatMessage;
@@ -25,18 +25,21 @@ import com.example.chat_app.uitilies.Constants;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.jsibbold.zoomage.ZoomageView;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
@@ -45,6 +48,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
     private  String receiverProfileImage;
     private final String senderId;
     static String imageurl;
+    StorageReference storageReference;
+    private static final int  MEGABYTE = 1024 * 1024;
 
     @SuppressLint("StaticFieldLeak")
     private static Context context;
@@ -113,18 +118,18 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
         }
     }
 
-    static class SentMessageViewHolder extends RecyclerView.ViewHolder{
+    class SentMessageViewHolder extends RecyclerView.ViewHolder {
 
 
         private final ItemConteinerSentMessageBinding binding;
 
-        SentMessageViewHolder(ItemConteinerSentMessageBinding itemContainerSentMessageBinding){
+        SentMessageViewHolder(ItemConteinerSentMessageBinding itemContainerSentMessageBinding) {
             super(itemContainerSentMessageBinding.getRoot());
             binding = itemContainerSentMessageBinding;
         }
 
-        void setData(ChatMessage chatMessage){
-            if(chatMessage.type!=null){
+        void setData(ChatMessage chatMessage) {
+            if (chatMessage.type != null) {
                 if (chatMessage.type.equals("text")) {
                     binding.textMessage.setVisibility(View.VISIBLE);
                     binding.textDateTime.setVisibility(View.VISIBLE);
@@ -134,19 +139,40 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     binding.documentTextDateTime.setVisibility(View.GONE);
                     binding.imageDateTime.setVisibility(View.GONE);
                     binding.images.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.textMessage.setText(chatMessage.message);
                     binding.textDateTime.setText(chatMessage.dateTime);
-                } else if(chatMessage.type.equals("document")) {
+                } else if (chatMessage.type.equals("pdf")) {
                     binding.textMessage.setVisibility(View.GONE);
                     binding.textDateTime.setVisibility(View.GONE);
                     binding.imageDateTime.setVisibility(View.GONE);
                     binding.images.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.documentSend.setVisibility(View.VISIBLE);
                     binding.pdfDownload.setVisibility(View.VISIBLE);
                     binding.documentImages.setVisibility(View.VISIBLE);
                     binding.documentTextDateTime.setVisibility(View.VISIBLE);
-                    Glide.with(context).load(chatMessage.message).into(binding.images);
-                    binding.imageDateTime.setText(chatMessage.dateTime);
+                    binding.documentTextDateTime.setText(chatMessage.dateTime);
+                } else if (chatMessage.type.equals("word")) {
+                    binding.textMessage.setVisibility(View.GONE);
+                    binding.textDateTime.setVisibility(View.GONE);
+                    binding.documentSend.setVisibility(View.GONE);
+                    binding.pdfDownload.setVisibility(View.GONE);
+                    binding.documentImages.setVisibility(View.GONE);
+                    binding.documentTextDateTime.setVisibility(View.GONE);
+                    binding.imageDateTime.setVisibility(View.GONE);
+                    binding.images.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.VISIBLE);
+                    binding.wordSend.setVisibility(View.VISIBLE);
+                    binding.wordImages.setVisibility(View.VISIBLE);
+                    binding.wordTextDateTime.setVisibility(View.VISIBLE);
+                    binding.wordTextDateTime.setText(chatMessage.dateTime);
                 }else {
                     binding.textMessage.setVisibility(View.GONE);
                     binding.textDateTime.setVisibility(View.GONE);
@@ -154,6 +180,10 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     binding.pdfDownload.setVisibility(View.GONE);
                     binding.documentImages.setVisibility(View.GONE);
                     binding.documentTextDateTime.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.imageDateTime.setVisibility(View.VISIBLE);
                     binding.images.setVisibility(View.VISIBLE);
                     Glide.with(context).load(chatMessage.message).into(binding.images);
@@ -161,51 +191,36 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                 }
             }
 
-        binding.images.setOnClickListener(view -> showImagePicDialog(chatMessage));
+            binding.images.setOnClickListener(view -> showImagePicDialog(chatMessage));
             binding.textMessage.setOnLongClickListener(view -> {
                 deleteMsg(chatMessage);
                 return true;
             });
+            binding.pdfDownload.setOnClickListener(view -> download(chatMessage));
+            binding.wordDownload.setOnClickListener(view -> download(chatMessage));
         }
 
-        void deleteMsg(ChatMessage chatMessage){
-            FirebaseFirestore database = FirebaseFirestore.getInstance();
-           database.collection(Constants.KEY_COLLECTION_CHAT).document(chatMessage.id).delete()
-                   .addOnSuccessListener(new OnSuccessListener<Void>() {
-                       @Override
-                       public void onSuccess(Void aVoid) {
-                           Log.d(TAG, "Message deleted!");
-                       }
-                   })
-                   .addOnFailureListener(new OnFailureListener() {
-                       @Override
-                       public void onFailure(@NonNull Exception e) {
-                           Log.w(TAG, "Error deleting Message", e);
-                       }
-                   });
-            /*query.addListenerForSingleValueEvent(new ValueEventListener() {
+        void deleteMsg(ChatMessage chatMessage) {
+            FirebaseFirestore storage = FirebaseFirestore.getInstance();
+               storage.collection(Constants.KEY_COLLECTION_CHAT).document(chatMessage.id)
+                       .delete().addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    for(DataSnapshot dataSnapshot1 : snapshot.getChildren()){
-                        if(dataSnapshot1.child(Constants.KEY_USER_ID).equals(Constants.KEY_USER_ID)){
-                            dataSnapshot1.getRef().removeValue();
-                        }else {
-                            Toast.makeText(context, "you can delete only your msg....", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
+                public void onSuccess(Void unused) {
+                    Toast.makeText(context,"Message is Deleted",Toast.LENGTH_LONG);
 
                 }
-            });*/
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(context,"Message not Deleted",Toast.LENGTH_LONG);
+                }
+            });
         }
 
         @SuppressLint("ResourceType")
         private void showImagePicDialog(ChatMessage image) {
-           /* Dialog builder = new Dialog(context,android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-            builder.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            Dialog builder = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+            builder.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
             builder.setContentView(R.layout.image_show);
             ZoomageView fullImage = builder.findViewById(R.id.imageFullView);
             Glide.with(context).load(image.message).into(fullImage);
@@ -214,22 +229,47 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             builder.setCancelable(true);
             builder.show();
 
-            button.setOnClickListener(v -> builder.dismiss());*/
-            final Dialog dialog=new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            dialog.setContentView(R.layout.image_show);
-            ZoomageView fullImage = dialog.findViewById(R.id.imageFullView);
-            Glide.with(context).load(image.message).into(fullImage);
-
-            ImageView button = dialog.findViewById(R.id.fullImageBack);
-            dialog.setCancelable(true);
-            dialog.show();
-
-            button.setOnClickListener(v -> dialog.dismiss());
+            button.setOnClickListener(v -> builder.dismiss());
         }
 
-    }
+        public void download(ChatMessage message){
+            StorageReference storageReference = FirebaseStorage.getInstance().getReferenceFromUrl(message.message);
+            String FileName = storageReference.getName();
 
+            storageReference = FirebaseStorage.getInstance().getReferenceFromUrl(message.message);
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri) {
+                    String url = uri.toString();
+                    downloadFile(url,FileName);
+                    /*if(message.type.equals("pdf")){
+                        downloadFile(url,FileName);
+                    }else if(message.type.equals("word")){
+                        downloadFile(url,FileName);
+                    }*/
+              Log.e("url",url);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(context, "File Not Download", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        public void downloadFile(String url, String fileName) {
+            DownloadManager  manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+            Uri uri = Uri.parse(url);
+            DownloadManager.Request request = new DownloadManager.Request(uri);
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE | DownloadManager.Request.NETWORK_WIFI) ;
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,fileName);
+             manager.enqueue(request);
+
+        }
+
+
+    }
     static class ReceivedMessageViewHolder extends RecyclerView.ViewHolder{
 
         private final ItemContainerRecivedMessageBinding binding;
@@ -253,18 +293,28 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     binding.imageDateTime.setVisibility(View.GONE);
                     binding.imageProfileImage.setVisibility(View.GONE);
                     binding.images.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordImageProfile.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.textMessage.setText(chatMessage.message);
                     binding.textDateTime.setText(chatMessage.dateTime);
                     if(receiverProfileImage != null){
                         Glide.with(context).load(receiverProfileImage).into(binding.imageProfile);
                     }
-                } else if(chatMessage.type.equals("document")) {
+                } else if(chatMessage.type.equals("pdf")) {
                     binding.textMessage.setVisibility(View.GONE);
                     binding.textDateTime.setVisibility(View.GONE);
                     binding.imageProfile.setVisibility(View.GONE);
                     binding.imageDateTime.setVisibility(View.GONE);
                     binding.imageProfileImage.setVisibility(View.GONE);
                     binding.images.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordImageProfile.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.documentImages.setVisibility(View.VISIBLE);
                     binding.documentSend.setVisibility(View.VISIBLE);
                     binding.pdfDownload.setVisibility(View.VISIBLE);
@@ -275,7 +325,29 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     if(receiverProfileImage != null){
                         Glide.with(context).load(receiverProfileImage).into(binding.documentImageProfile);
                     }
-                }else {
+                }else if(chatMessage.type.equals("word")) {
+                    binding.textMessage.setVisibility(View.GONE);
+                    binding.textDateTime.setVisibility(View.GONE);
+                    binding.imageProfile.setVisibility(View.GONE);
+                    binding.imageDateTime.setVisibility(View.GONE);
+                    binding.imageProfileImage.setVisibility(View.GONE);
+                    binding.images.setVisibility(View.GONE);
+                    binding.documentImages.setVisibility(View.GONE);
+                    binding.documentSend.setVisibility(View.GONE);
+                    binding.pdfDownload.setVisibility(View.GONE);
+                    binding.documentTextDateTime.setVisibility(View.GONE);
+                    binding.documentImageProfile.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.VISIBLE);
+                    binding.wordImages.setVisibility(View.VISIBLE);
+                    binding.wordDownload.setVisibility(View.VISIBLE);
+                    binding.wordImageProfile.setVisibility(View.VISIBLE);
+                    binding.wordTextDateTime.setVisibility(View.VISIBLE);
+                    binding.wordTextDateTime.setText(chatMessage.dateTime);
+                    if(receiverProfileImage != null){
+                        Glide.with(context).load(receiverProfileImage).into(binding.wordImageProfile);
+                    }
+                }
+                else {
                     binding.textMessage.setVisibility(View.GONE);
                     binding.textDateTime.setVisibility(View.GONE);
                     binding.imageProfile.setVisibility(View.GONE);
@@ -284,6 +356,11 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     binding.pdfDownload.setVisibility(View.GONE);
                     binding.documentTextDateTime.setVisibility(View.GONE);
                     binding.documentImageProfile.setVisibility(View.GONE);
+                    binding.wordSend.setVisibility(View.GONE);
+                    binding.wordImages.setVisibility(View.GONE);
+                    binding.wordDownload.setVisibility(View.GONE);
+                    binding.wordImageProfile.setVisibility(View.GONE);
+                    binding.wordTextDateTime.setVisibility(View.GONE);
                     binding.imageDateTime.setVisibility(View.VISIBLE);
                     binding.imageProfileImage.setVisibility(View.VISIBLE);
                     binding.images.setVisibility(View.VISIBLE);
@@ -296,6 +373,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             }
 
             binding.images.setOnClickListener(view -> showImagePicDialog(chatMessage));
+            binding.wordDownload.setOnClickListener(view -> download(chatMessage));
+            binding.pdfDownload.setOnClickListener(view -> download(chatMessage));
 
         }
 
@@ -312,6 +391,42 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             builder.show();
 
             button.setOnClickListener(v -> builder.dismiss());
+        }
+
+        public void download(ChatMessage message){
+            StorageReference storageReference = FirebaseStorage.getInstance().getReferenceFromUrl(message.message);
+            String FileName = storageReference.getName();
+
+            storageReference = FirebaseStorage.getInstance().getReferenceFromUrl(message.message);
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri) {
+                    String url = uri.toString();
+                    downloadFile(url,FileName);
+                    /*if(message.type.equals("pdf")){
+                        downloadFile(url,FileName);
+                    }else if(message.type.equals("word")){
+                        downloadFile(url,FileName);
+                    }*/
+                    Log.e("url",url);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(context, "File Not Download", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        public void downloadFile(String url, String fileName) {
+            DownloadManager  manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+            Uri uri = Uri.parse(url);
+            DownloadManager.Request request = new DownloadManager.Request(uri);
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE | DownloadManager.Request.NETWORK_WIFI) ;
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,fileName);
+            manager.enqueue(request);
+
         }
     }
 
