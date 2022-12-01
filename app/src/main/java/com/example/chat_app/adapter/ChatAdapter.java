@@ -330,11 +330,11 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             ZoomageView fullImage = builder.findViewById(R.id.imageFullView);
             Glide.with(context).load(image.message).into(fullImage);
 
-            ImageView button = builder.findViewById(R.id.fullImageBack);
+        /*    ImageView button = builder.findViewById(R.id.fullImageBack);
             builder.setCancelable(true);
             builder.show();
 
-            button.setOnClickListener(v -> builder.dismiss());
+            button.setOnClickListener(v -> builder.dismiss());*/
         }
 
         public void download(ChatMessage message){
@@ -623,11 +623,11 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             ZoomageView fullImage = builder.findViewById(R.id.imageFullView);
             Glide.with(context).load(image.message).into(fullImage);
 
-            ImageView button = builder.findViewById(R.id.fullImageBack);
+          /*  ImageView button = builder.findViewById(R.id.fullImageBack);
             builder.setCancelable(true);
             builder.show();
 
-            button.setOnClickListener(v -> builder.dismiss());
+            button.setOnClickListener(v -> builder.dismiss());*/
         }
 
         public void download(ChatMessage message){
