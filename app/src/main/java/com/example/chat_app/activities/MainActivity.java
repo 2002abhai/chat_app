@@ -2,12 +2,10 @@ package com.example.chat_app.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -30,9 +28,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,6 +53,67 @@ public class MainActivity extends BaseActivity implements ConversionListener {
         getToken();
         setListeners();
         listenConversions();
+
+        Intent intent = getIntent();
+        if(intent != null){
+            String action = intent.getAction();
+            String type = intent.getType();
+            if(Intent.ACTION_SEND.equals(action) && type!=null){
+                if(type.equalsIgnoreCase("text/plain")){
+                    handleTextData(intent);
+                }else if(type.startsWith("image/")){
+                    handleImageData(intent);
+                }else if(type.startsWith("audio/")){
+                    handleAudioData(intent);
+                }else if(type.startsWith("video/")){
+                    handleVideoData(intent);
+                }
+
+            }else if(Intent.ACTION_SEND_MULTIPLE.equals(action)&& type!= null){
+                if(type.startsWith("image/")){
+                    handleMultipleImage(intent);
+                }
+
+            }
+        }
+
+    }
+
+    private void handleVideoData(Intent intent) {
+        Uri video =intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if(video != null){
+            Log.d("audio file path ",video.getPath());
+        }
+    }
+
+    private void handleAudioData(Intent intent) {
+        Uri audio =intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if(audio != null){
+            Log.d("audio file path ",audio.getPath());
+        }
+    }
+
+    private void handleImageData(Intent intent) {
+        Uri image =intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if(image != null){
+            Log.d("image file path ",image.getPath());
+        }
+    }
+
+    private void handleTextData(Intent intent) {
+        String textData =intent.getStringExtra(Intent.EXTRA_TEXT);
+        if(textData != null){
+            Log.d("Text data",textData);
+        }
+    }
+
+    private void handleMultipleImage(Intent intent) {
+        ArrayList<Uri> imageList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+        if(imageList != null){
+            for(Uri uri :imageList){
+                Log.d("image file path ",uri.getPath());
+            }
+        }
     }
 
     private void init(){
@@ -143,16 +199,6 @@ public class MainActivity extends BaseActivity implements ConversionListener {
             binding.progressBar.setVisibility(View.GONE);
         }
     };
-
-    /*private String encodeImage(Bitmap bitmap) {
-        int previewWidth = 150;
-        int previewHeight = bitmap.getHeight() * previewWidth / bitmap.getWidth();
-        Bitmap previewBitmap = Bitmap.createScaledBitmap(bitmap, previewWidth, previewHeight, false);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        previewBitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteArrayOutputStream);
-        byte[] bytes = byteArrayOutputStream.toByteArray();
-        return Base64.encodeToString(bytes, Base64.DEFAULT);
-    }*/
 
     private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),

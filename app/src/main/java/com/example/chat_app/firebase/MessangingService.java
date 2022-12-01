@@ -1,16 +1,19 @@
 package com.example.chat_app.firebase;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.RemoteInput;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.RemoteInput;
+//import androidx.core.app.RemoteInput;
+
 
 import com.example.chat_app.uitilies.Constants;
 import com.example.chat_app.activities.ChatActivity;
@@ -20,7 +23,7 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Random;
 
-public class    MessangingService extends FirebaseMessagingService {
+public class  MessangingService extends FirebaseMessagingService {
 
     public static final String NOTIFICATION_REPLY = "NotificationReply";
 
@@ -97,7 +100,6 @@ public class    MessangingService extends FirebaseMessagingService {
         notificationManagerCompat.notify(notificationId, builder.build());
     }*/
 
-
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
         UserModel user = new UserModel();
@@ -117,8 +119,7 @@ public class    MessangingService extends FirebaseMessagingService {
         @SuppressLint("UnspecifiedImmutableFlag") PendingIntent morePendingIntent = PendingIntent.getBroadcast(
                 this,
                 REQUEST_CODE_MORE,
-                new Intent(this, ChatActivity.class)
-                        .putExtra(KEY_INTENT_MORE, REQUEST_CODE_MORE),
+                new Intent(this, ChatActivity.class).putExtra(KEY_INTENT_MORE, REQUEST_CODE_MORE),
                 PendingIntent.FLAG_IMMUTABLE
         );
 
@@ -126,36 +127,35 @@ public class    MessangingService extends FirebaseMessagingService {
         @SuppressLint("UnspecifiedImmutableFlag") PendingIntent helpPendingIntent = PendingIntent.getBroadcast(
                 this,
                 REQUEST_CODE_HELP,
-                new Intent(this, ChatActivity.class)
-                        .putExtra(KEY_INTENT_HELP, REQUEST_CODE_HELP),
-                PendingIntent.FLAG_IMMUTABLE
+                new Intent(this, ChatActivity.class).putExtra(KEY_INTENT_HELP, REQUEST_CODE_HELP),
+                PendingIntent.FLAG_UPDATE_CURRENT
         );
 
 
         //We need this object for getting direct input from notification
-        RemoteInput remoteInput = new RemoteInput.Builder(NOTIFICATION_REPLY)
-                .setLabel("Please enter your name")
-                .build();
+        RemoteInput remoteInput = new RemoteInput.Builder(NOTIFICATION_REPLY).setLabel("Please enter message").build();
 
 
         //For the remote input we need this action object
-        NotificationCompat.Action action =
-                new NotificationCompat.Action.Builder(android.R.drawable.ic_dialog_email,
+        Notification.Action action = new Notification.Action.Builder(android.R.drawable.ic_dialog_email,
                         "Reply Now...", helpPendingIntent)
                         .addRemoteInput(remoteInput)
                         .build();
 
         //Creating the notifiction builder object
-        @SuppressLint("LaunchActivityFromNotification") NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(android.R.drawable.ic_dialog_email)
-                .setContentTitle(user.name)
-                .setContentText(remoteMessage.getData().get(Constants.KEY_MESSAGE))
-               .setStyle(new NotificationCompat.BigTextStyle().bigText(remoteMessage.getData().get(Constants.KEY_MESSAGE)))
-                .setAutoCancel(true)
-                .setContentIntent(helpPendingIntent)
-                .addAction(action)
-                .addAction(android.R.drawable.ic_menu_compass, "More", morePendingIntent)
-                .addAction(android.R.drawable.ic_menu_directions, "Help", helpPendingIntent);
+        @SuppressLint("LaunchActivityFromNotification") Notification  mBuilder = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            mBuilder = new Notification.Builder(this, channelId)
+                    .setSmallIcon(android.R.drawable.ic_dialog_email)
+                    .setContentTitle(user.name)
+                    .setContentText(remoteMessage.getData().get(Constants.KEY_MESSAGE))
+                   .setStyle(new Notification.BigTextStyle().bigText(remoteMessage.getData().get(Constants.KEY_MESSAGE)))
+                    .setAutoCancel(true)
+//                    .setContentIntent(helpPendingIntent)
+                    .addAction(action).build();
+                   /* .addAction(android.R.drawable.ic_menu_compass, "More", morePendingIntent)
+                    .addAction(android.R.drawable.ic_menu_directions, "Help", helpPendingIntent);*/
+        }
 
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -172,6 +172,6 @@ public class    MessangingService extends FirebaseMessagingService {
 
         //finally displaying the notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(notificationId, mBuilder.build());
+        notificationManager.notify(notificationId, mBuilder);
     }
 }

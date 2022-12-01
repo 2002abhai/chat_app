@@ -24,4 +24,6 @@
     <string name="onboarding_desc2">Enjoy high quality audio &amp; video anywhere and stay in touch.</string>
     <string name="onboarding_desc3">Stay connected with instant messaging in between the meeting.</string>
     <string name="onboarding_desc4">Schedule your meetings and conferences with ease.</string>
+    <string name="record_audio_and_send">Record Audio and Send</string>
+    <string name="timeZero">0:00</string>
 </resources>

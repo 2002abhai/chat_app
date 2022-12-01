@@ -7,6 +7,8 @@ public class ChatMessage {
     public String senderId,receiverId,message,dateTime,id,type;
     public Date dateObject;
     public String conversionId,conversionName,conversionImage;
+
+
     public String getType() {
         return type;
     }

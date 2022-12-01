@@ -1,24 +1,38 @@
 package com.example.chat_app.activities;
 
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.RECORD_AUDIO;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.RemoteInput;
-import androidx.core.content.FileProvider;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
+import com.devlomi.record_view.OnRecordListener;
+import com.example.chat_app.R;
 import com.example.chat_app.databinding.ActivityChatBinding;
 import com.example.chat_app.network.ApiClient;
 import com.example.chat_app.network.ApiService;
@@ -28,7 +42,6 @@ import com.example.chat_app.uitilies.Constants;
 import com.example.chat_app.uitilies.Preferencemanager;
 import com.example.chat_app.model.UserModel;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentChange;
@@ -47,6 +60,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,8 +90,14 @@ public class ChatActivity extends BaseActivity {
     StorageReference storageReference;
     Uri imageUri;
     Uri documentUri;
+    Uri audiouRi;
     UploadTask uploadImage;
     String downloadUri;
+    String AudioSavePathInDevice = null;
+    MediaRecorder mediaRecorder ;
+    public static final int RequestPermissionCode = 1;
+    String file_name;
+
 
 
     @Override
@@ -87,6 +108,7 @@ public class ChatActivity extends BaseActivity {
         storage = FirebaseStorage.getInstance();
         storageReference = storage.getReference();
         Bundle remoteReply = RemoteInput.getResultsFromIntent(getIntent());
+
 
         if (remoteReply != null) {
             String message = remoteReply.getCharSequence("TEXT_REPLY").toString();
@@ -117,6 +139,8 @@ public class ChatActivity extends BaseActivity {
         Glide.with(this).load(receiverUser.image).into(binding.chatImageProfile);
         binding.chatRecycleView.setAdapter(chatAdapter);
         database = FirebaseFirestore.getInstance();
+        binding.reordButton.setRecordView(binding.recorderView);
+        binding.reordButton.setListenForRecord(false);
     }
 
     private void setListeners() {
@@ -155,6 +179,118 @@ public class ChatActivity extends BaseActivity {
                 sendMessage();
             }
         });
+        binding.reordButton.setOnClickListener(v -> {
+            if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this,WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this,READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE,RECORD_AUDIO,READ_EXTERNAL_STORAGE}, RequestPermissionCode);
+            }else{
+                binding.reordButton.setListenForRecord(true);
+            }
+        });
+        binding.recorderView.setOnRecordListener(new OnRecordListener() {
+            @Override
+            public void onStart() {
+                //Start Recording..
+                Log.d("RecordView", "onStart");
+                MediaRecorderReady();
+                try {
+                    mediaRecorder.prepare();
+                    mediaRecorder.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    showToast(e.toString());
+                }
+                binding.inputMessage.setVisibility(View.GONE);
+                binding.recorderView.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onCancel() {
+                //On Swipe To Cancel
+                Log.d("RecordView", "onCancel");
+                mediaRecorder.reset();
+                mediaRecorder.release();
+                File file = new File(AudioSavePathInDevice);
+                if(file.exists()){
+                    file.delete();
+                    binding.recorderView.setVisibility(View.GONE);
+                    binding.inputMessage.setVisibility(View.VISIBLE);
+
+                }
+
+            }
+
+            @Override
+            public void onFinish(long recordTime, boolean limitReached) {
+                Log.d("RecordView", "onFinish");
+                mediaRecorder.stop();
+                mediaRecorder.release();
+                binding.recorderView.setVisibility(View.GONE);
+                binding.inputMessage.setVisibility(View.VISIBLE);
+                mediaScanner(AudioSavePathInDevice);
+            }
+
+            @Override
+            public void onLessThanSecond() {
+                //When the record time is less than One Second
+                Log.d("RecordView", "onLessThanSecond");
+                mediaRecorder.reset();
+                mediaRecorder.release();
+                File file = new File(AudioSavePathInDevice);
+                if(file.exists()) {
+                    file.delete();
+                    mediaRecorder.reset();
+                    mediaRecorder.release();
+                    binding.recorderView.setVisibility(View.GONE);
+                    binding.inputMessage.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    public void MediaRecorderReady(){
+        if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE,RECORD_AUDIO,READ_EXTERNAL_STORAGE}, RequestPermissionCode);
+        } else {
+             file_name = (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)).getPath();
+//            file_name = (getCacheDir()).getPath();
+            File file = new File(file_name);
+            String date= String.valueOf(new Date().getTime());
+            String fileDateName = dateFormatChange(date);
+
+            mediaRecorder=new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            mediaRecorder.setAudioEncodingBitRate(16*44100);
+            mediaRecorder.setAudioSamplingRate(44100);
+            if (!file.exists()){
+                file.mkdirs();
+            }
+             AudioSavePathInDevice=file+"/"+fileDateName+".mp3";
+            Log.d("Audio file path ---",AudioSavePathInDevice);
+            mediaRecorder.setOutputFile(AudioSavePathInDevice);
+        }
+    }
+
+    private void mediaScanner(String file) {
+        MediaScannerConnection.scanFile(this,
+                new String[] { file}, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.i("ExternalStorage", "Scanned " + path + ":");
+                        Log.i("ExternalStorage", "-> uri=" + uri);
+                        sendVoiceMessage(AudioSavePathInDevice);
+
+                    }
+                });
     }
 
     private void showPicDialog() {
@@ -317,6 +453,52 @@ public class ChatActivity extends BaseActivity {
         });
     }
 
+    private void sendVoiceMessage(String audioPath) {
+        Uri audioFile = Uri.fromFile(new File(audioPath));
+        StorageMetadata metadata = new StorageMetadata.Builder().setContentType("*/*").build();
+        StorageReference ref = storageReference.child("Audio/" + audioFile.getLastPathSegment());
+        UploadTask audio = ref.putFile(audioFile);
+        audio.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                while (!uriTask.isSuccessful()) ;
+                String audioURi = uriTask.getResult().toString();
+                audiouRi = Uri.parse(audioURi);
+                if (uriTask.isSuccessful()) {
+                    DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+                    String id = ref.getId();
+                    HashMap<String, Object> message = new HashMap<>();
+                    message.put(Constants.KEY_SENDER_ID, preferencemanager.getString(Constants.KEY_USER_ID));
+                    message.put(Constants.KEY_CHAT_ID, id);
+                    message.put(Constants.MESSAGE_TYPE, "audio");
+                    message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+                    message.put(Constants.KEY_MESSAGE, audioURi);
+                    message.put(Constants.KEY_TIMESTAMP, new Date());
+                    database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+                }
+
+
+            }
+        });
+
+    }
+
+    private String dateFormatChange(String date){
+        System.out.println(date);
+        SimpleDateFormat spf=new SimpleDateFormat("MMM d, yyyy HH:mm:ss", Locale.ENGLISH);
+        Date newDate;
+        try {
+            newDate = spf.parse(date);
+            date = spf.format(newDate);
+            System.out.println(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            System.out.println(e);
+        }
+        return date;
+    }
+
     private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -324,6 +506,18 @@ public class ChatActivity extends BaseActivity {
                     if (result.getData() != null) {
                         imageUri = result.getData().getData();
                         sendImage();
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> AudioPick = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        imageUri = result.getData().getData();
+//                       sendVoiceMessage(imageUri);
                     }
                 }
             }
@@ -356,16 +550,6 @@ public class ChatActivity extends BaseActivity {
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
-   /* void deleteData(){
-        FirebaseFirestore database = FirebaseFirestore.getInstance();
-        sentMessageBinding.textMessage.setOnClickListener(view -> {
-            binding.imagedelete.setVisibility(View.VISIBLE);
-            binding.vedio.setVisibility(View.GONE);
-            database.collection(Constants.KEY_COLLECTION_CHAT).document("id").delete();
-//            database.collection(Constants.KEY_COLLECTION_CONVERSATION).document(chatMessage.id).delete();
-            chatAdapter.notify();
-        });
-    }*/
 
     private void sendNotification(String messageBody) {
         ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody).enqueue(new Callback<String>() {
@@ -387,7 +571,7 @@ public class ChatActivity extends BaseActivity {
                     }
                     showToast("Notification sent successfully ");
                 } else {
-                    showToast("Error :" + response.code());
+                    Log.d( "response.code","${}");
                 }
             }
 
@@ -530,9 +714,29 @@ public class ChatActivity extends BaseActivity {
     };
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case RequestPermissionCode:
+                if (grantResults.length > 0) {
+                    boolean StoragePermission = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    boolean RecordPermission = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+
+                    if (StoragePermission && RecordPermission) {
+                        Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Permission Denied", Toast.LENGTH_LONG).show();
+                    }
+                }
+                break;
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         listenAvailabilityOfReceiver();
     }
+
 
 }
