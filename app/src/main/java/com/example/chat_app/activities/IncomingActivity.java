@@ -58,8 +58,7 @@ public class IncomingActivity extends AppCompatActivity {
         binding.textusername.setText(getIntent().getStringExtra(Constants.KEY_USER));
 
         binding.imageacceptinvitation.setOnClickListener(view -> {
-            sendInvitationResponse(Constants.REMOTE_MSG_INVITATION_ACCEPTED,
-                    getIntent().getStringExtra(Constants.REMOTE_MSG_INVITER_TOKEN));
+            sendInvitationResponse(Constants.REMOTE_MSG_INVITATION_ACCEPTED, getIntent().getStringExtra(Constants.REMOTE_MSG_INVITER_TOKEN));
         });
 
         binding.imagerejectinvitation.setOnClickListener(view -> {
@@ -82,8 +81,10 @@ public class IncomingActivity extends AppCompatActivity {
 
             data.put(Constants.REMOTE_MSG_TYPE, Constants.REMOTE_MSG_INVITATION_RESPONSE);
             data.put(Constants.REMOTE_MSG_INVITATION_RESPONSE, type);
+            data.put("notificationType", "Video");
             body.put(Constants.REMOTE_MSG_DATA, data);
             body.put(Constants.REMOTE_MSG_REGISTRATION_IDS, tokens);
+            body.put("priority", "high");
             sendRemoteMessage(body.toString(), type);
 
         } catch (Exception exception) {
@@ -104,6 +105,17 @@ public class IncomingActivity extends AppCompatActivity {
                                     URL serverURL = new URL("https://meet.jit.si");
                                     JitsiMeetConferenceOptions.Builder builder = new JitsiMeetConferenceOptions.Builder();
                                     builder.setServerURL(serverURL);
+                                    builder.setConfigOverride("requireInviteOthers", false);
+                                    builder.setFeatureFlag("add-people.enabled", false);
+                                    builder.setFeatureFlag("invite.enabled", false);
+                                    builder.setFeatureFlag("raise-hand.enabled",false);
+                                    builder.setFeatureFlag("car-mode.enabled",false);
+                                    builder.setFeatureFlag("participants-pane.enabled",false);
+                                    builder.setFeatureFlag("video-share.enabled",false);
+                                    builder.setFeatureFlag("security-options.enabled",false);
+                                    builder.setFeatureFlag("live-streaming.enabled",false);
+                                    builder.setFeatureFlag("close-captions.enabled",false);
+                                    builder.setFeatureFlag("chat.enabled",false);
                                     builder.setRoom(getIntent().getStringExtra(Constants.REMOTE_MSG_MEETING_ROOM));
                                     if (meetingType.equals("audio")) {
                                         builder.setVideoMuted(true);

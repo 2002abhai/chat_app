@@ -18,8 +18,6 @@ import java.util.Random;
  */
 public class NotifationReciver extends BroadcastReceiver {
 
-
-
     @Override
     public void onReceive(Context context, Intent intent) {
 

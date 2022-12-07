@@ -129,35 +129,6 @@ public class OutGoingActivity extends AppCompatActivity {
                 }
             }
         });
-
-
-       /* FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
-            @Override
-            public void onComplete(@NonNull Task<String> task) {
-
-                if (task.isSuccessful() && task.getResult() != null) {
-                    inviteToken = task.getResult();
-                    if (meetingType != null) {
-                        if (getIntent().getBooleanExtra("isMultiple", false)) {
-                            Type type = new TypeToken<UserModel>() {
-
-                            }.getType();
-                            ArrayList<UserModel> receivers = new Gson().fromJson(getIntent().getStringExtra("selectedUsers"), type);
-                            if (receivers!=null)
-                            {
-                                totalReceivers=receivers.size();
-                            }
-                            initiateMeeting(meetingType, null, receivers);
-                        } else {
-                            if (user != null) {
-                                totalReceivers=1;
-                                initiateMeeting(meetingType, user.token,null);
-                            }
-                        }
-                    }
-                }
-            }
-        });*/
     }
 
     private void initiateMeeting(String meetingType, String receiverToken, UserModel receivers) {
@@ -188,6 +159,7 @@ public class OutGoingActivity extends AppCompatActivity {
             data.put(Constants.KEY_image,preferencemanager.getString(Constants.KEY_image));
             meetingRoom=preferencemanager.getString(Constants.KEY_USER_ID)+" "+ UUID.randomUUID().toString().substring(0,5);
             data.put(Constants.REMOTE_MSG_MEETING_ROOM,meetingRoom);
+            data.put("notificationType","Video");
 
             main.put(Constants.REMOTE_MSG_REGISTRATION_IDS,tokens);
             main.put(Constants.REMOTE_MSG_DATA,data);
@@ -241,8 +213,11 @@ public class OutGoingActivity extends AppCompatActivity {
             JSONObject data = new JSONObject();
             data.put(Constants.REMOTE_MSG_TYPE, Constants.REMOTE_MSG_INVITATION_RESPONSE);
             data.put(Constants.REMOTE_MSG_INVITATION_RESPONSE, Constants.REMOTE_MSG_INVITATION_CANCELLED);
+            data.put("notificationType", "Video");
             body.put(Constants.REMOTE_MSG_DATA, data);
             body.put(Constants.REMOTE_MSG_REGISTRATION_IDS, tokens);
+            body.put("priority", "high");
+//            body.put(Constants.REMOTE_MSG_REGISTRATION_IDS, tokens);
             sendRemoteMessage(body.toString(), Constants.REMOTE_MSG_INVITATION_RESPONSE);
 
         } catch (Exception exception) {
@@ -262,6 +237,17 @@ public class OutGoingActivity extends AppCompatActivity {
 
                         JitsiMeetConferenceOptions.Builder builder=new JitsiMeetConferenceOptions.Builder();
                         builder.setServerURL(serverURL);
+                        builder.setConfigOverride("requireInviteOthers", false);
+                        builder.setFeatureFlag("add-people.enabled", false);
+                        builder.setFeatureFlag("invite.enabled", false);
+                        builder.setFeatureFlag("raise-hand.enabled",false);
+                        builder.setFeatureFlag("car-mode.enabled",false);
+                        builder.setFeatureFlag("participants-pane.enabled",false);
+                        builder.setFeatureFlag("video-share.enabled",false);
+                        builder.setFeatureFlag("security-options.enabled",false);
+                        builder.setFeatureFlag("live-streaming.enabled",false);
+                        builder.setFeatureFlag("close-captions.enabled",false);
+                        builder.setFeatureFlag("chat.enabled",false);
                         builder.setRoom(meetingRoom);
                         if (meetingType.equals("audio"))
                         {

@@ -10,7 +10,6 @@ import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -19,8 +18,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -28,11 +25,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.RemoteInput;
-import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.devlomi.record_view.OnRecordListener;
-import com.example.chat_app.R;
 import com.example.chat_app.databinding.ActivityChatBinding;
 import com.example.chat_app.network.ApiClient;
 import com.example.chat_app.network.ApiService;
@@ -94,10 +89,10 @@ public class ChatActivity extends BaseActivity {
     UploadTask uploadImage;
     String downloadUri;
     String AudioSavePathInDevice = null;
-    MediaRecorder mediaRecorder ;
+    MediaRecorder mediaRecorder;
     public static final int RequestPermissionCode = 1;
     String file_name;
-
+    String replyMessages;
 
 
     @Override
@@ -107,18 +102,10 @@ public class ChatActivity extends BaseActivity {
         setContentView(binding.getRoot());
         storage = FirebaseStorage.getInstance();
         storageReference = storage.getReference();
-        Bundle remoteReply = RemoteInput.getResultsFromIntent(getIntent());
-
-
-        if (remoteReply != null) {
-            String message = remoteReply.getCharSequence("TEXT_REPLY").toString();
-            Log.e(message, "message" + message);
-
-        }
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         notificationManager.cancel(101);
-
+        broadcastReceiver();
         setListeners();
         loadReceiverDetails();
         init();
@@ -145,7 +132,7 @@ public class ChatActivity extends BaseActivity {
 
     private void setListeners() {
         binding.imageBack.setOnClickListener(v -> onBackPressed());
-        binding.layoutSendDocument.setOnClickListener(view ->showPicDialog());
+        binding.layoutSendDocument.setOnClickListener(view -> showPicDialog());
         binding.call.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -181,11 +168,11 @@ public class ChatActivity extends BaseActivity {
         });
         binding.reordButton.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this,WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this,READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
             ) {
-                ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE,RECORD_AUDIO,READ_EXTERNAL_STORAGE}, RequestPermissionCode);
-            }else{
+                ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE, RECORD_AUDIO, READ_EXTERNAL_STORAGE}, RequestPermissionCode);
+            } else {
                 binding.reordButton.setListenForRecord(true);
             }
         });
@@ -208,12 +195,11 @@ public class ChatActivity extends BaseActivity {
 
             @Override
             public void onCancel() {
-                //On Swipe To Cancel
                 Log.d("RecordView", "onCancel");
                 mediaRecorder.reset();
                 mediaRecorder.release();
                 File file = new File(AudioSavePathInDevice);
-                if(file.exists()){
+                if (file.exists()) {
                     file.delete();
                     binding.recorderView.setVisibility(View.GONE);
                     binding.inputMessage.setVisibility(View.VISIBLE);
@@ -239,7 +225,7 @@ public class ChatActivity extends BaseActivity {
                 mediaRecorder.reset();
                 mediaRecorder.release();
                 File file = new File(AudioSavePathInDevice);
-                if(file.exists()) {
+                if (file.exists()) {
                     file.delete();
                     mediaRecorder.reset();
                     mediaRecorder.release();
@@ -252,37 +238,37 @@ public class ChatActivity extends BaseActivity {
     }
 
     @SuppressLint("SimpleDateFormat")
-    public void MediaRecorderReady(){
+    public void MediaRecorderReady() {
         if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE,RECORD_AUDIO,READ_EXTERNAL_STORAGE}, RequestPermissionCode);
+            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE, RECORD_AUDIO, READ_EXTERNAL_STORAGE}, RequestPermissionCode);
         } else {
-             file_name = (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)).getPath();
+            file_name = (Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)).getPath();
 //            file_name = (getCacheDir()).getPath();
             File file = new File(file_name);
-            String date= String.valueOf(new Date().getTime());
+            String date = String.valueOf(new Date().getTime());
             String fileDateName = dateFormatChange(date);
 
-            mediaRecorder=new MediaRecorder();
+            mediaRecorder = new MediaRecorder();
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mediaRecorder.setAudioEncodingBitRate(16*44100);
+            mediaRecorder.setAudioEncodingBitRate(16 * 44100);
             mediaRecorder.setAudioSamplingRate(44100);
-            if (!file.exists()){
+            if (!file.exists()) {
                 file.mkdirs();
             }
-             AudioSavePathInDevice=file+"/"+fileDateName+".mp3";
-            Log.d("Audio file path ---",AudioSavePathInDevice);
+            AudioSavePathInDevice = file + "/" + fileDateName + ".mp3";
+            Log.d("Audio file path ---", AudioSavePathInDevice);
             mediaRecorder.setOutputFile(AudioSavePathInDevice);
         }
     }
 
     private void mediaScanner(String file) {
         MediaScannerConnection.scanFile(this,
-                new String[] { file}, null,
+                new String[]{file}, null,
                 new MediaScannerConnection.OnScanCompletedListener() {
                     public void onScanCompleted(String path, Uri uri) {
                         Log.i("ExternalStorage", "Scanned " + path + ":");
@@ -294,7 +280,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     private void showPicDialog() {
-        String options[] = {"Image", "Pdf","word"};
+        String options[] = {"Image", "Pdf", "word"};
         AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
         builder.setTitle("Select Option");
         builder.setItems(options, new DialogInterface.OnClickListener() {
@@ -307,10 +293,10 @@ public class ChatActivity extends BaseActivity {
                     pickImage.launch(intent);
                 } else if (which == 1) {
                     Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-                    chooseFile.setType("*/*");
+                    chooseFile.setType("application/pdf");;
                     chooseFile = Intent.createChooser(chooseFile, "Choose a file");
                     pickPdf.launch(chooseFile);
-                }else if (which == 2) {
+                } else if (which == 2) {
                     Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
                     chooseFile.setType("*/*");
                     chooseFile = Intent.createChooser(chooseFile, "Choose a file");
@@ -346,22 +332,32 @@ public class ChatActivity extends BaseActivity {
             conversion.put(Constants.KEY_TIMESTAMP, new Date());
             addConversion(conversion);
         }
-        if (!isReceiverAvailable) {
-            try {
-                JSONObject data = new JSONObject();
-                data.put("title", preferencemanager.getString(Constants.KEY_NAME));
-                data.put("body", binding.inputMessage.getText().toString());
+//        if (!isReceiverAvailable) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("title", preferencemanager.getString(Constants.KEY_NAME));
+            data.put("body", binding.inputMessage.getText().toString());
+            data.put("SenderID", preferencemanager.getString(Constants.KEY_USER_ID));
+            data.put("SenderName", preferencemanager.getString(Constants.KEY_NAME));
+            data.put("SenderImage", preferencemanager.getString(Constants.KEY_image));
+            data.put("reciverID", receiverUser.id);
+            data.put("reciverImage", receiverUser.image);
+            data.put("reciverName", receiverUser.name);
+            data.put("conveId", conversationId);
+            data.put("notificationType", "simple");
 
-                JSONObject body = new JSONObject();
-                body.put("notification", data);
-                body.put("to", receiverUser.token);
+            JSONObject body = new JSONObject();
+            body.put("data", data);
+            body.put("to", receiverUser.token);
+            body.put("priority", "high");
 
-                sendNotification(body.toString());
+            Log.d("Notification Body ------", body.toString());
+            sendNotification(body.toString());
 
-            } catch (Exception exception) {
-                showToast(exception.getMessage());
-            }
+        } catch (Exception exception) {
+            showToast(exception.getMessage());
         }
+//        }
         binding.inputMessage.setText(null);
 
     }
@@ -372,6 +368,7 @@ public class ChatActivity extends BaseActivity {
         uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                showToast("wait image is sending");
                 Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
                 while (!uriTask.isSuccessful()) ;
                 downloadUri = uriTask.getResult().toString();
@@ -390,18 +387,48 @@ public class ChatActivity extends BaseActivity {
                 }
 
 
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("title", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("body",downloadUri );
+                    data.put("SenderID", preferencemanager.getString(Constants.KEY_USER_ID));
+                    data.put("SenderName", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("SenderImage", preferencemanager.getString(Constants.KEY_image));
+                    data.put("reciverID", receiverUser.id);
+                    data.put("reciverImage", receiverUser.image);
+                    data.put("reciverName", receiverUser.name);
+                    data.put("conveId", conversationId);
+                    data.put("notificationType", "image");
+
+                    JSONObject body = new JSONObject();
+                    body.put("data", data);
+                    body.put("to", receiverUser.token);
+                    body.put("priority", "high");
+
+                    Log.d("Notification Body ------", body.toString());
+                    sendNotification(body.toString());
+
+                } catch (Exception exception) {
+                    showToast(exception.getMessage());
+                }
+
+
             }
         });
 
     }
 
     private void sendPdf() {
-        String fileName = System.currentTimeMillis()+".pdf";
+        String fileName = System.currentTimeMillis() + ".pdf";
         StorageReference ref = storageReference.child("document/").child(fileName);
+//        StorageReference ref = storageReference.child("document/").child(documentUri.getLastPathSegment());
+        Log.d("pdfname",documentUri.getLastPathSegment());
+        Log.d("Downloadpdfuri",documentUri.toString());
         uploadImage = ref.putFile(documentUri);
         uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                showToast("wait pdf is sending");
                 Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
                 while (!uriTask.isSuccessful()) ;
                 downloadUri = uriTask.getResult().toString();
@@ -418,19 +445,46 @@ public class ChatActivity extends BaseActivity {
                     message.put(Constants.KEY_TIMESTAMP, new Date());
                     database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
                     StorageReference httpsReference = FirebaseStorage.getInstance().getReferenceFromUrl(downloadUri);
-                   httpsReference.getName();
+                    httpsReference.getName();
+
+                }
+
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("title", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("body",fileName);
+                    data.put("SenderID", preferencemanager.getString(Constants.KEY_USER_ID));
+                    data.put("SenderName", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("SenderImage", preferencemanager.getString(Constants.KEY_image));
+                    data.put("reciverID", receiverUser.id);
+                    data.put("reciverImage", receiverUser.image);
+                    data.put("reciverName", receiverUser.name);
+                    data.put("conveId", conversationId);
+                    data.put("notificationType", "simple");
+
+                    JSONObject body = new JSONObject();
+                    body.put("data", data);
+                    body.put("to", receiverUser.token);
+                    body.put("priority", "high");
+
+                    Log.d("Notification Body ------", body.toString());
+                    sendNotification(body.toString());
+
+                } catch (Exception exception) {
+                    showToast(exception.getMessage());
                 }
             }
         });
     }
 
     private void sendWord() {
-        String fileName = System.currentTimeMillis()+".word";
+        String fileName = System.currentTimeMillis() + ".word";
         StorageReference ref = storageReference.child("document/").child(fileName);
         uploadImage = ref.putFile(documentUri);
         uploadImage.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                showToast("wait wordFile  is sending");
                 Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
                 while (!uriTask.isSuccessful()) ;
                 downloadUri = uriTask.getResult().toString();
@@ -448,6 +502,30 @@ public class ChatActivity extends BaseActivity {
                     database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
                     StorageReference httpsReference = FirebaseStorage.getInstance().getReferenceFromUrl(downloadUri);
                     httpsReference.getName();
+                }
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("title", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("body",fileName);
+                    data.put("SenderID", preferencemanager.getString(Constants.KEY_USER_ID));
+                    data.put("SenderName", preferencemanager.getString(Constants.KEY_NAME));
+                    data.put("SenderImage", preferencemanager.getString(Constants.KEY_image));
+                    data.put("reciverID", receiverUser.id);
+                    data.put("reciverImage", receiverUser.image);
+                    data.put("reciverName", receiverUser.name);
+                    data.put("conveId", conversationId);
+                    data.put("notificationType", "simple");
+
+                    JSONObject body = new JSONObject();
+                    body.put("data", data);
+                    body.put("to", receiverUser.token);
+                    body.put("priority", "high");
+
+                    Log.d("Notification Body ------", body.toString());
+                    sendNotification(body.toString());
+
+                } catch (Exception exception) {
+                    showToast(exception.getMessage());
                 }
             }
         });
@@ -484,9 +562,9 @@ public class ChatActivity extends BaseActivity {
 
     }
 
-    private String dateFormatChange(String date){
+    private String dateFormatChange(String date) {
         System.out.println(date);
-        SimpleDateFormat spf=new SimpleDateFormat("MMM d, yyyy HH:mm:ss", Locale.ENGLISH);
+        SimpleDateFormat spf = new SimpleDateFormat("MMM d, yyyy HH:mm:ss", Locale.ENGLISH);
         Date newDate;
         try {
             newDate = spf.parse(date);
@@ -499,58 +577,6 @@ public class ChatActivity extends BaseActivity {
         return date;
     }
 
-    private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    if (result.getData() != null) {
-                        imageUri = result.getData().getData();
-                        sendImage();
-                    }
-                }
-            }
-    );
-
-    private final ActivityResultLauncher<Intent> AudioPick = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    if (result.getData() != null) {
-                        imageUri = result.getData().getData();
-//                       sendVoiceMessage(imageUri);
-                    }
-                }
-            }
-    );
-
-    private final ActivityResultLauncher<Intent> pickPdf = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    if (result.getData() != null) {
-                        documentUri = result.getData().getData();
-                        sendPdf();
-                    }
-                }
-            }
-    );
-
-    private final ActivityResultLauncher<Intent> pickWord = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    if (result.getData() != null) {
-                        documentUri = result.getData().getData();
-                        sendWord();
-                    }
-                }
-            }
-    );
-
-    private void showToast(String message) {
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
     private void sendNotification(String messageBody) {
         ApiClient.getClient().create(ApiService.class).sendMessage(Constants.getRemoteMsgHeaders(), messageBody).enqueue(new Callback<String>() {
             @Override
@@ -560,6 +586,8 @@ public class ChatActivity extends BaseActivity {
                         if (response.body() != null) {
                             JSONObject responseJson = new JSONObject(response.body());
                             JSONArray result = responseJson.getJSONArray("results");
+                            Log.d("response--------", responseJson.toString());
+                            Log.d("result--------", result.toString());
                             if (responseJson.getInt("failure") == 1) {
                                 JSONObject error = (JSONObject) result.get(0);
                                 showToast(error.getString("error"));
@@ -571,7 +599,7 @@ public class ChatActivity extends BaseActivity {
                     }
                     showToast("Notification sent successfully ");
                 } else {
-                    Log.d( "response.code","${}");
+                    Log.d("response.code", "${}");
                 }
             }
 
@@ -595,7 +623,10 @@ public class ChatActivity extends BaseActivity {
                                     int availability = Objects.requireNonNull(value.getLong(Constants.KEY_AVAILABILITY)).intValue();
                                     isReceiverAvailable = availability == 1;
                                 }
+
                                 receiverUser.token = value.getString(Constants.KEY_FCM_TOKEN);
+                                Log.d("UserChat::", "Token 1 -> " + receiverUser.token);
+                                Log.d("UserChat::", "User 1 -> " + receiverUser.name);
                                 if (receiverUser.image == null) {
                                     receiverUser.image = value.getString(Constants.KEY_image);
                                     chatAdapter.setReceiverProfileImage(receiverUser.image);
@@ -660,17 +691,83 @@ public class ChatActivity extends BaseActivity {
         }
     });
 
-
     private void loadReceiverDetails() {
         receiverUser = (UserModel) getIntent().getSerializableExtra(Constants.KEY_USER);
+        if (receiverUser == null) {
+            Intent intent = getIntent();
+            receiverUser = new UserModel();
+
+            receiverUser.setName(intent.getStringExtra("receiveFromName"));
+            receiverUser.setId(intent.getStringExtra("receiveFromId"));
+            receiverUser.setImage(intent.getStringExtra("receiveFromImage"));
+
+            binding.textName.setText(receiverUser.name);
+            Log.d("reciverUserModel:", String.valueOf(receiverUser));
+            String senderId = intent.getStringExtra("senderId");
+            String senderName = intent.getStringExtra("senderName");
+            String senderImage = intent.getStringExtra("senderImage");
+            conversationId = intent.getStringExtra("converId");
+            Log.d("UserID::", "ID -> " + senderId);
+
+            database = FirebaseFirestore.getInstance();
+            DocumentReference ref = database.collection(Constants.KEY_COLLECTION_CHAT).document();
+            String id = ref.getId();
+            HashMap<String, Object> message = new HashMap<>();
+            message.put(Constants.KEY_SENDER_ID, senderId);
+            message.put(Constants.KEY_CHAT_ID, id);
+            message.put(Constants.MESSAGE_TYPE, "text");
+            message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+            message.put(Constants.KEY_MESSAGE, replyMessages);
+            message.put(Constants.KEY_TIMESTAMP, new Date());
+            database.collection(Constants.KEY_COLLECTION_CHAT).document(id).set(message);
+            if (conversationId != null) {
+                updateConversion(replyMessages);
+            } else {
+                HashMap<String, Object> conversion = new HashMap<>();
+                conversion.put(Constants.KEY_SENDER_ID, senderId);
+                conversion.put(Constants.KEY_SENDER_NAME, senderName);
+                conversion.put(Constants.KEY_SENDER_IMAGE, senderImage);
+                conversion.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
+                conversion.put(Constants.KEY_RECEIVER_NAME, receiverUser.name);
+                conversion.put(Constants.KEY_RECEIVER_IMAGE, receiverUser.image);
+                conversion.put(Constants.KEY_LAST_MESSAGE, replyMessages);
+                conversion.put(Constants.KEY_TIMESTAMP, new Date());
+                addConversion(conversion);
+            }
+//        if (!isReceiverAvailable) {
+            try {
+                JSONObject data = new JSONObject();
+                data.put("title", senderName);
+                data.put("body", replyMessages);
+                data.put("SenderID", senderId);
+                data.put("SenderName", senderName);
+                data.put("SenderImage", senderImage);
+                data.put("reciverID", receiverUser.id);
+                data.put("reciverImage", receiverUser.image);
+                data.put("reciverName", receiverUser.name);
+                data.put("conveId", conversationId);
+                data.put("notificationType", "simple");
+
+                JSONObject body = new JSONObject();
+                body.put("data", data);
+                body.put("to", receiverUser.token);
+                body.put("priority", "high");
+
+                Log.d("Notification Body ------", body.toString());
+                sendNotification(body.toString());
+
+            } catch (Exception exception) {
+                showToast(exception.getMessage());
+            }
+//        }
+
+        }
         binding.textName.setText(receiverUser.name);
     }
-
 
     private String getReadableDateTime(Date date) {
         return new SimpleDateFormat("MMMM dd,yyyy - hh.mm a", Locale.getDefault()).format(date);
     }
-
 
     private void checkForConversion() {
         if (chatMessages.size() != 0) {
@@ -706,12 +803,69 @@ public class ChatActivity extends BaseActivity {
                 .addOnCompleteListener(conversationOnCompleteListener);
     }
 
+    private void broadcastReceiver() {
+        Intent intent = getIntent();
+        Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
+        if (remoteInput != null) {
+            replyMessages = remoteInput.getCharSequence("key1") + "";
+            Log.d("remotemessaeg", replyMessages);
+        }
+    }
+
     private final OnCompleteListener<QuerySnapshot> conversationOnCompleteListener = task -> {
         if (task.isSuccessful() && task.getResult() != null && task.getResult().getDocuments().size() > 0) {
             DocumentSnapshot documentSnapshot = task.getResult().getDocuments().get(0);
             conversationId = documentSnapshot.getId();
         }
     };
+
+    private final ActivityResultLauncher<Intent> pickImage = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        imageUri = result.getData().getData();
+                        sendImage();
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> pickPdf = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        documentUri = result.getData().getData();
+                        sendPdf();
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> pickWord = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        documentUri = result.getData().getData();
+                        sendWord();
+                    }
+                }
+            }
+    );
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        receiverUser = (UserModel) intent.getSerializableExtra("userBun");
+        Log.d("reciverUserModel:", String.valueOf(receiverUser));
+
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
@@ -737,6 +891,5 @@ public class ChatActivity extends BaseActivity {
         super.onResume();
         listenAvailabilityOfReceiver();
     }
-
 
 }

@@ -211,8 +211,12 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
                     binding.imageDateTime.setText(chatMessage.dateTime);
                 }
             }
-            binding.images.setOnClickListener(view -> showImagePicDialog(chatMessage));
             binding.textMessage.setOnLongClickListener(view -> {deleteMsg(chatMessage);return true;});
+            binding.playAndPushLayout.setOnLongClickListener(view -> {deleteMsg(chatMessage);return true;});
+            binding.wordSend.setOnLongClickListener(view -> {deleteMsg(chatMessage);return true;});
+            binding.documentSend.setOnLongClickListener(view -> {deleteMsg(chatMessage);return true;});
+            binding.images.setOnLongClickListener(view -> {deleteMsg(chatMessage);return true;});
+            binding.images.setOnClickListener(view -> showImagePicDialog(chatMessage));
             binding.pdfDownload.setOnClickListener(view -> download(chatMessage));
             binding.wordDownload.setOnClickListener(view -> download(chatMessage));
             binding.playButton.setOnClickListener(view -> playSound());
@@ -329,12 +333,6 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             builder.setContentView(R.layout.image_show);
             ZoomageView fullImage = builder.findViewById(R.id.imageFullView);
             Glide.with(context).load(image.message).into(fullImage);
-
-        /*    ImageView button = builder.findViewById(R.id.fullImageBack);
-            builder.setCancelable(true);
-            builder.show();
-
-            button.setOnClickListener(v -> builder.dismiss());*/
         }
 
         public void download(ChatMessage message){
@@ -623,11 +621,6 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
             ZoomageView fullImage = builder.findViewById(R.id.imageFullView);
             Glide.with(context).load(image.message).into(fullImage);
 
-          /*  ImageView button = builder.findViewById(R.id.fullImageBack);
-            builder.setCancelable(true);
-            builder.show();
-
-            button.setOnClickListener(v -> builder.dismiss());*/
         }
 
         public void download(ChatMessage message){

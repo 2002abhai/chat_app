@@ -234,7 +234,7 @@
             android:layout_height="match_parent"
             android:layout_marginStart="@dimen/_4sdp"
             android:padding="@dimen/_8sdp"
-            android:src="@drawable/ic_play_arrow_white_24dp"/>
+            android:src="@drawable/ic_baseline_play_arrow_white_24dp"/>
 
         <TextView
             android:id="@+id/playerCurrentTimeText"

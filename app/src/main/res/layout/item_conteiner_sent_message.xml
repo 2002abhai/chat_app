@@ -129,6 +129,7 @@
             android:paddingEnd="@dimen/_12sdp"
             android:paddingBottom="@dimen/_8sdp"
             android:src="@drawable/ic_word_icon"
+            app:tint="@color/white"
             android:visibility="gone"
             android:scaleType="fitCenter"
             app:layout_constraintWidth_percent="0.8" />
@@ -174,7 +175,7 @@
             android:layout_height="match_parent"
             android:layout_marginStart="@dimen/_4sdp"
             android:padding="@dimen/_8sdp"
-            android:src="@drawable/ic_play_arrow_white_24dp"/>
+            android:src="@drawable/ic_baseline_play_arrow_white_24dp"/>
 
         <TextView
             android:id="@+id/playerCurrentTimeText"

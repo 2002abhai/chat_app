@@ -41,6 +41,7 @@ public class Constants {
     public static final String REMOTE_MSG_TYPE="type";
     public static final String MESSAGE_TYPE="type";
     public static final String REMOTE_MSG_INVITATION="invitation";
+    public static final String TOKEN="to";
 
 
     public static HashMap<String,String> remoteMsgHeaders = new HashMap<>();
